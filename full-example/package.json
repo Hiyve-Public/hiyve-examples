@@ -1,0 +1,44 @@
+{
+  "name": "@hiyve/full-example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "vite",
+    "dev:server": "cd server && npm run dev",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "setup": "npm install && cd server && npm install"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.0",
+    "@mui/material": "^5.15.0",
+    "@hiyve/audio-monitor": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-audio-monitor/hiyve-audio-monitor-latest.tgz",
+    "@hiyve/chat": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-chat/hiyve-chat-latest.tgz",
+    "@hiyve/client-provider": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-client-provider/hiyve-client-provider-latest.tgz",
+    "@hiyve/control-bar": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-control-bar/hiyve-control-bar-latest.tgz",
+    "@hiyve/device-selector": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-device-selector/hiyve-device-selector-latest.tgz",
+    "@hiyve/file-manager": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-file-manager/hiyve-file-manager-latest.tgz",
+    "@hiyve/mood-analysis": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-mood-analysis/hiyve-mood-analysis-latest.tgz",
+    "@hiyve/participant-list": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-participant-list/hiyve-participant-list-latest.tgz",
+    "@hiyve/recording": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-recording/hiyve-recording-latest.tgz",
+    "@hiyve/transcription": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-transcription/hiyve-transcription-latest.tgz",
+    "@hiyve/video-tile": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-video-tile/hiyve-video-tile-latest.tgz",
+    "@hiyve/video-grid": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-video-grid/hiyve-video-grid-latest.tgz",
+    "@hiyve/waiting-room": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-waiting-room/hiyve-waiting-room-latest.tgz",
+    "muziertcclient-alpha": "https://s3.amazonaws.com/muzie.media/npm-registry/muziertcclient-alpha/muziertcclient-alpha-latest.tgz",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.0",
+    "vite": "^5.4.0"
+  }
+}

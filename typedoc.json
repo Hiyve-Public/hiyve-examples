@@ -1,0 +1,69 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Hiyve Examples",
+  "entryPoints": [
+    "full-example/src/main.tsx",
+    "full-example/src/App.tsx",
+    "full-example/src/components/index.ts"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs",
+  "readme": "README.md",
+  "plugin": [
+    "typedoc-plugin-mdn-links"
+  ],
+  "theme": "default",
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Entry Point",
+    "Components",
+    "Examples",
+    "Types",
+    "*"
+  ],
+  "sort": [
+    "source-order",
+    "alphabetical"
+  ],
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "skipErrorChecking": true,
+  "tsconfig": "./tsconfig.json",
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "externalSymbolLinkMappings": {
+    "@hiyve/client-provider": {
+      "ClientProvider": "https://sdk.hiyve.com/modules/client_provider.html#ClientProvider",
+      "useConnection": "https://sdk.hiyve.com/functions/client_provider.useConnection.html",
+      "useRoom": "https://sdk.hiyve.com/functions/client_provider.useRoom.html",
+      "useParticipants": "https://sdk.hiyve.com/functions/client_provider.useParticipants.html",
+      "useLocalMedia": "https://sdk.hiyve.com/functions/client_provider.useLocalMedia.html",
+      "useRecording": "https://sdk.hiyve.com/functions/client_provider.useRecording.html",
+      "useChat": "https://sdk.hiyve.com/functions/client_provider.useChat.html",
+      "useWaitingRoom": "https://sdk.hiyve.com/functions/client_provider.useWaitingRoom.html"
+    },
+    "@hiyve/video-grid": {
+      "VideoGrid": "https://sdk.hiyve.com/modules/video_grid.html#VideoGrid"
+    },
+    "@hiyve/control-bar": {
+      "ControlBar": "https://sdk.hiyve.com/modules/control_bar.html#ControlBar"
+    }
+  }
+}
