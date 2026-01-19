@@ -38,6 +38,7 @@ const HIYVE_PACKAGES = [
   'video-grid',
   'video-tile',
   'waiting-room',
+  'whiteboard',
 ];
 
 const S3_BASE = 'https://s3.amazonaws.com/muzie.media/npm-registry';

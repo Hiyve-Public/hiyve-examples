@@ -35,6 +35,7 @@
     "@hiyve/video-tile": "file:../../hiyve-components/packages/video-tile",
     "@hiyve/video-grid": "file:../../hiyve-components/packages/video-grid",
     "@hiyve/waiting-room": "file:../../hiyve-components/packages/waiting-room",
+    "@hiyve/whiteboard": "file:../../hiyve-components/packages/whiteboard",
     "muziertcclient-alpha": "https://s3.amazonaws.com/muzie.media/npm-registry/muziertcclient-alpha/muziertcclient-alpha-latest.tgz",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

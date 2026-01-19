@@ -6,8 +6,14 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    // Include muziertcclient-alpha so it's properly pre-bundled
-    include: ['muziertcclient-alpha'],
+    // Include dependencies used by @hiyve packages so they're properly pre-bundled
+    include: [
+      'muziertcclient-alpha',
+      '@mui/material',
+      '@mui/icons-material',
+      '@emotion/react',
+      '@emotion/styled',
+    ],
     // Exclude @hiyve packages from pre-bundling so changes are picked up
     exclude: [
       '@hiyve/audio-monitor',
@@ -24,11 +30,24 @@ export default defineConfig({
       '@hiyve/video-grid',
       '@hiyve/video-tile',
       '@hiyve/waiting-room',
+      '@hiyve/whiteboard',
     ],
   },
   resolve: {
     // Dedupe dependencies to ensure single instance resolution
-    dedupe: ['react', 'react-dom', 'muziertcclient-alpha'],
+    // This prevents "multiple instances" warnings for packages shared between
+    // hiyve-components and full-example
+    dedupe: [
+      'react',
+      'react-dom',
+      'muziertcclient-alpha',
+      '@emotion/react',
+      '@emotion/styled',
+      '@emotion/cache',
+      '@mui/material',
+      '@mui/system',
+      '@mui/icons-material',
+    ],
   },
   build: {
     commonjsOptions: {

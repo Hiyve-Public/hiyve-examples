@@ -8,6 +8,7 @@
  * - Chat panel
  * - Settings (audio gain, intelligence config)
  * - File manager
+ * - Whiteboard
  * - Captions (owner only)
  *
  * @example
@@ -42,13 +43,15 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { Box, Typography, Divider } from '@mui/material';
+import { Box, Typography, Divider, Button } from '@mui/material';
 import {
   People as PeopleIcon,
   Chat as ChatIcon,
   Settings as SettingsIcon,
   ClosedCaption as CaptionsIcon,
   Folder as FolderIcon,
+  Draw as WhiteboardIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import {
   useRoom,
@@ -65,6 +68,7 @@ import { GainControl, type GainControlLabels } from '@hiyve/audio-monitor';
 import { TranscriptViewer } from '@hiyve/transcription';
 import { FileManager } from '@hiyve/file-manager';
 import { IntelligenceSettings, type IntelligenceConfig } from '@hiyve/control-bar';
+import { Whiteboard, CreateWhiteboardDialog, type WhiteboardFile } from '@hiyve/whiteboard';
 
 interface SidebarProps {
   /** Local user's display name */
@@ -82,9 +86,12 @@ export function Sidebar({
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState('participants');
   const [micGain, setMicGain] = useState(100);
+  const [whiteboardFileId, setWhiteboardFileId] = useState<string | null>(null);
+  const [whiteboardFileData, setWhiteboardFileData] = useState<WhiteboardFile | null>(null);
+  const [showCreateWhiteboardDialog, setShowCreateWhiteboardDialog] = useState(false);
 
   // Get state from ClientProvider
-  const { isOwner } = useRoom();
+  const { isOwner, room } = useRoom();
   const { participantCount } = useParticipants();
   const { unreadCount, clearUnread } = useChat();
   const { setGain } = useAudioProcessing();
@@ -111,6 +118,18 @@ export function Sidebar({
     },
     [setGain]
   );
+
+  // Show create whiteboard dialog
+  const handleShowCreateWhiteboard = useCallback(() => {
+    setShowCreateWhiteboardDialog(true);
+  }, []);
+
+  // Handle whiteboard created
+  const handleWhiteboardCreated = useCallback((fileId: string, _fileName: string, fileData: WhiteboardFile) => {
+    setWhiteboardFileId(fileId);
+    setWhiteboardFileData(fileData);
+    setShowCreateWhiteboardDialog(false);
+  }, []);
 
   // Custom labels for GainControl (demonstrates i18n support)
   const customGainLabels = useMemo<Partial<GainControlLabels>>(
@@ -147,6 +166,11 @@ export function Sidebar({
         id: 'files',
         label: 'Files',
         icon: <FolderIcon />,
+      },
+      {
+        id: 'whiteboard',
+        label: 'Whiteboard',
+        icon: <WhiteboardIcon />,
       },
     ];
 
@@ -235,6 +259,66 @@ export function Sidebar({
             />
           );
 
+        case 'whiteboard':
+          if (!whiteboardFileId) {
+            return (
+              <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* Header with Create button */}
+                <Box sx={{ p: 2, textAlign: 'center', borderBottom: 1, borderColor: 'divider' }}>
+                  <WhiteboardIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Whiteboards
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={handleShowCreateWhiteboard}
+                    size="small"
+                  >
+                    Create New
+                  </Button>
+                </Box>
+
+                {/* Flat view FileManager showing only whiteboards */}
+                <Box sx={{ flex: 1, overflow: 'auto' }}>
+                  <FileManager
+                    filterFileTypes={['whiteboard']}
+                    onFileOpen={(file) => {
+                      setWhiteboardFileId(file.fileId);
+                      setWhiteboardFileData(null); // Let hook fetch from server
+                    }}
+                    showToolbar={false}
+                    showBreadcrumbs={false}
+                    enableDragDrop={false}
+                    enableMultiSelect={false}
+                  />
+                </Box>
+
+                {/* Create dialog */}
+                <CreateWhiteboardDialog
+                  open={showCreateWhiteboardDialog}
+                  onClose={() => setShowCreateWhiteboardDialog(false)}
+                  onCreate={handleWhiteboardCreated}
+                  defaultName={`${room?.name || 'Room'} Whiteboard`}
+                />
+              </Box>
+            );
+          }
+          return (
+            <Whiteboard
+              fileId={whiteboardFileId}
+              initialFileData={whiteboardFileData ?? undefined}
+              showToolbar
+              showZoomControls
+              enableAutoSave
+              onClose={() => {
+                setWhiteboardFileId(null);
+                setWhiteboardFileData(null);
+              }}
+              sx={{ height: '100%' }}
+            />
+          );
+
         case 'captions':
           return (
             <TranscriptViewer
@@ -264,6 +348,12 @@ export function Sidebar({
       onIntelligenceConfigChange,
       isRecording,
       isTranscribing,
+      whiteboardFileId,
+      whiteboardFileData,
+      showCreateWhiteboardDialog,
+      handleShowCreateWhiteboard,
+      handleWhiteboardCreated,
+      room?.name,
     ]
   );
 
@@ -277,8 +367,10 @@ export function Sidebar({
       resizable
       styles={{
         defaultWidth: 600,
-        minWidth: 600,
+        minWidth: 280,
         maxWidth: 1200,
+        tabLabelsMinWidth: 480,
+        tabLabelsInlineMinWidth: 800,
       }}
       sx={{
         borderLeft: 1,

@@ -26,6 +26,7 @@ packages=(
   "video-grid"
   "video-tile"
   "waiting-room"
+  "whiteboard"
 )
 
 for pkg in "${packages[@]}"; do
