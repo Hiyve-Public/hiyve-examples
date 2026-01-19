@@ -1,7 +1,9 @@
 /**
  * Sidebar Component
  *
- * Tabbed sidebar with:
+ * Wraps `@hiyve/sidebar` with application-specific tab configuration.
+ *
+ * Tabs:
  * - Participants list
  * - Chat panel
  * - Settings (audio gain, intelligence config)
@@ -40,15 +42,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import {
-  Box,
-  Paper,
-  Tabs,
-  Tab,
-  Badge,
-  Typography,
-  Divider,
-} from '@mui/material';
+import { Box, Typography, Divider } from '@mui/material';
 import {
   People as PeopleIcon,
   Chat as ChatIcon,
@@ -64,6 +58,7 @@ import {
   useRecording,
   useTranscription,
 } from '@hiyve/client-provider';
+import { Sidebar as HiyveSidebar, type SidebarTab } from '@hiyve/sidebar';
 import { ParticipantList } from '@hiyve/participant-list';
 import { ChatPanel } from '@hiyve/chat';
 import { GainControl, type GainControlLabels } from '@hiyve/audio-monitor';
@@ -85,7 +80,7 @@ export function Sidebar({
   intelligenceConfig,
   onIntelligenceConfigChange,
 }: SidebarProps) {
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('participants');
   const [micGain, setMicGain] = useState(100);
 
   // Get state from ClientProvider
@@ -97,13 +92,16 @@ export function Sidebar({
   const { isTranscribing } = useTranscription();
 
   // Handle tab change
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-    // Clear unread count when switching to chat tab
-    if (newValue === 1) {
-      clearUnread();
-    }
-  };
+  const handleTabChange = useCallback(
+    (tabId: string) => {
+      setActiveTab(tabId);
+      // Clear unread count when switching to chat tab
+      if (tabId === 'chat') {
+        clearUnread();
+      }
+    },
+    [clearUnread]
+  );
 
   // Handle mic gain change
   const handleGainChange = useCallback(
@@ -124,135 +122,169 @@ export function Sidebar({
     []
   );
 
+  // Define tabs configuration
+  const tabs = useMemo<SidebarTab[]>(() => {
+    const baseTabs: SidebarTab[] = [
+      {
+        id: 'participants',
+        label: `(${participantCount + 1})`,
+        icon: <PeopleIcon />,
+        tooltip: 'Participants',
+      },
+      {
+        id: 'chat',
+        label: 'Chat',
+        icon: <ChatIcon />,
+        badge: unreadCount,
+        badgeColor: 'error',
+      },
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: <SettingsIcon />,
+      },
+      {
+        id: 'files',
+        label: 'Files',
+        icon: <FolderIcon />,
+      },
+    ];
+
+    // Add captions tab for owners only
+    if (isOwner) {
+      baseTabs.push({
+        id: 'captions',
+        label: 'Captions',
+        icon: <CaptionsIcon color={isTranscribing ? 'primary' : 'inherit'} />,
+        tooltip: 'Captions (owner only)',
+      });
+    }
+
+    return baseTabs;
+  }, [participantCount, unreadCount, isOwner, isTranscribing]);
+
+  // Render content for each tab
+  const renderContent = useCallback(
+    (tabId: string) => {
+      switch (tabId) {
+        case 'participants':
+          return (
+            <ParticipantList
+              localUserName={userName}
+              showHeader={false}
+              maxHeight="100%"
+              sx={{ height: '100%' }}
+            />
+          );
+
+        case 'chat':
+          return (
+            <ChatPanel
+              showHeader={false}
+              maxHeight="100%"
+              sx={{ height: '100%' }}
+            />
+          );
+
+        case 'settings':
+          return (
+            <Box sx={{ p: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Audio Settings
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              {/* GainControl with custom labels for i18n */}
+              <GainControl
+                value={micGain}
+                onChange={handleGainChange}
+                label="Mic Volume"
+                size="100%"
+                labels={customGainLabels}
+                sx={{ mb: 2 }}
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mb: 3 }}
+              >
+                Adjust your microphone volume. Changes apply in real-time.
+                Use the settings button in the control bar to change devices.
+              </Typography>
+
+              {/* Intelligence Settings - owner only */}
+              {isOwner && (
+                <IntelligenceSettings
+                  config={intelligenceConfig}
+                  onChange={onIntelligenceConfigChange}
+                  disabled={isRecording}
+                  sx={{ mt: 2 }}
+                />
+              )}
+            </Box>
+          );
+
+        case 'files':
+          return (
+            <FileManager
+              showToolbar
+              showBreadcrumbs
+              enableDragDrop
+              enableMultiSelect
+              onFileOpen={(file) => console.log('Opening file:', file.fileName)}
+            />
+          );
+
+        case 'captions':
+          return (
+            <TranscriptViewer
+              showTimestamps
+              autoScroll
+              groupingWindowMs={3000}
+              emptyMessage={
+                isTranscribing
+                  ? 'Waiting for transcriptions...'
+                  : 'Start Intelligence Mode to see live captions'
+              }
+              sx={{ height: '100%' }}
+            />
+          );
+
+        default:
+          return null;
+      }
+    },
+    [
+      userName,
+      micGain,
+      handleGainChange,
+      customGainLabels,
+      isOwner,
+      intelligenceConfig,
+      onIntelligenceConfigChange,
+      isRecording,
+      isTranscribing,
+    ]
+  );
+
   return (
-    <Paper
-      elevation={2}
+    <HiyveSidebar
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      renderContent={renderContent}
+      collapsible
+      resizable
+      styles={{
+        defaultWidth: 600,
+        minWidth: 600,
+        maxWidth: 1200,
+      }}
       sx={{
-        width: '50%',
-        minWidth: 320,
-        display: 'flex',
-        flexDirection: 'column',
         borderLeft: 1,
         borderColor: 'divider',
       }}
-    >
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="fullWidth"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Tab
-          icon={<PeopleIcon />}
-          label={`(${participantCount + 1})`}
-          iconPosition="start"
-        />
-        <Tab
-          icon={
-            <Badge badgeContent={unreadCount} color="error">
-              <ChatIcon />
-            </Badge>
-          }
-          label="Chat"
-          iconPosition="start"
-        />
-        <Tab icon={<SettingsIcon />} label="Settings" iconPosition="start" />
-        <Tab icon={<FolderIcon />} label="Files" iconPosition="start" />
-        {/* Captions tab - owner only (transcriptions are only sent to room owner) */}
-        {isOwner && (
-          <Tab
-            icon={<CaptionsIcon color={isTranscribing ? 'primary' : 'inherit'} />}
-            label="Captions"
-            iconPosition="start"
-          />
-        )}
-      </Tabs>
-
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
-        {/* Participants Tab */}
-        {activeTab === 0 && (
-          <ParticipantList
-            localUserName={userName}
-            showHeader={false}
-            maxHeight="100%"
-            sx={{ height: '100%' }}
-          />
-        )}
-
-        {/* Chat Tab */}
-        {activeTab === 1 && (
-          <ChatPanel
-            showHeader={false}
-            maxHeight="100%"
-            sx={{ height: '100%' }}
-          />
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 2 && (
-          <Box sx={{ p: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Audio Settings
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-
-            {/* GainControl with custom labels for i18n */}
-            <GainControl
-              value={micGain}
-              onChange={handleGainChange}
-              label="Mic Volume"
-              size="100%"
-              labels={customGainLabels}
-              sx={{ mb: 2 }}
-            />
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: 'block', mb: 3 }}
-            >
-              Adjust your microphone volume. Changes apply in real-time.
-              Use the settings button in the control bar to change devices.
-            </Typography>
-
-            {/* Intelligence Settings - owner only */}
-            {isOwner && (
-              <IntelligenceSettings
-                config={intelligenceConfig}
-                onChange={onIntelligenceConfigChange}
-                disabled={isRecording}
-                sx={{ mt: 2 }}
-              />
-            )}
-          </Box>
-        )}
-
-        {/* Files Tab */}
-        {activeTab === 3 && (
-          <FileManager
-            showToolbar
-            showBreadcrumbs
-            enableDragDrop
-            enableMultiSelect
-            onFileOpen={(file) => console.log('Opening file:', file.fileName)}
-          />
-        )}
-
-        {/* Captions Tab - owner only */}
-        {isOwner && activeTab === 4 && (
-          <TranscriptViewer
-            showTimestamps
-            autoScroll
-            groupingWindowMs={3000}
-            emptyMessage={
-              isTranscribing
-                ? 'Waiting for transcriptions...'
-                : 'Start Intelligence Mode to see live captions'
-            }
-            sx={{ height: '100%' }}
-          />
-        )}
-      </Box>
-    </Paper>
+    />
   );
 }
 

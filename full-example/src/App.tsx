@@ -183,10 +183,10 @@
  *   </FileCacheProvider>
  * </ClientProvider>
  *
- * // App.tsx - Connected component (auto-binds to FileCacheProvider)
- * import { ConnectedFileManager } from '@hiyve/file-manager';
+ * // App.tsx - FileManager component (auto-binds to FileCacheProvider)
+ * import { FileManager } from '@hiyve/file-manager';
  *
- * <ConnectedFileManager
+ * <FileManager
  *   showToolbar
  *   showBreadcrumbs
  *   enableDragDrop

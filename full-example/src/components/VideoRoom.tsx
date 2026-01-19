@@ -42,7 +42,6 @@ import {
 } from '@mui/material';
 import {
   ContentCopy as CopyIcon,
-  ViewSidebar as SidebarIcon,
   MeetingRoom as WaitingRoomIcon,
   Slideshow as PresentationIcon,
 } from '@mui/icons-material';
@@ -50,7 +49,6 @@ import {
   useRoom,
   useConnection,
   useRecording,
-  useChat,
   useWaitingRoom,
 } from '@hiyve/client-provider';
 import {
@@ -78,7 +76,6 @@ interface VideoRoomProps {
 export function VideoRoom({ userName }: VideoRoomProps) {
   // UI state
   const [layout, setLayout] = useState<LayoutMode>('grid');
-  const [showSidebar, setShowSidebar] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [waitingRoomAnchorEl, setWaitingRoomAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -91,7 +88,6 @@ export function VideoRoom({ userName }: VideoRoomProps) {
   const { room, isOwner } = useRoom();
   const { leaveRoom } = useConnection();
   const { isRecording, recordingDuration } = useRecording();
-  const { unreadCount } = useChat();
   const { waitingUsers } = useWaitingRoom();
 
   // ============================================================================
@@ -271,20 +267,6 @@ export function VideoRoom({ userName }: VideoRoomProps) {
             </>
           )}
 
-          {/* Sidebar toggle */}
-          <Tooltip title={showSidebar ? 'Hide sidebar' : 'Show sidebar'}>
-            <IconButton
-              onClick={() => setShowSidebar(!showSidebar)}
-              color={showSidebar ? 'primary' : 'default'}
-            >
-              <Badge
-                badgeContent={!showSidebar && unreadCount > 0 ? unreadCount : 0}
-                color="error"
-              >
-                <SidebarIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
         </Toolbar>
       </AppBar>
 
@@ -327,13 +309,11 @@ export function VideoRoom({ userName }: VideoRoomProps) {
         </Box>
 
         {/* Sidebar */}
-        {showSidebar && (
-          <Sidebar
-            userName={userName}
-            intelligenceConfig={intelligenceConfig}
-            onIntelligenceConfigChange={setIntelligenceConfig}
-          />
-        )}
+        <Sidebar
+          userName={userName}
+          intelligenceConfig={intelligenceConfig}
+          onIntelligenceConfigChange={setIntelligenceConfig}
+        />
       </Box>
 
       {/* Snackbar for copy confirmation */}
