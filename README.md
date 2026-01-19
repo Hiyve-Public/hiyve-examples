@@ -2,38 +2,39 @@
 
 Example applications demonstrating how to build video conferencing apps with `@hiyve/*` components.
 
+## Quick Start
+
+```bash
+# 1. Clone or download this repository
+git clone https://github.com/your-org/hiyve-examples.git
+cd hiyve-examples/full-example
+
+# 2. Install dependencies
+npm run setup
+
+# 3. Configure your MuzieRTC credentials
+cp server/.env.example server/.env
+# Edit server/.env with your API key and secret
+
+# 4. Start the app
+npm run dev
+```
+
+Open http://localhost:5173
+
 ## Overview
 
 The `@hiyve/*` packages provide React components for building video conferencing applications powered by MuzieRTC infrastructure. These examples show how to use the components to create fully-featured video apps.
 
-## Getting Started
-
-### Prerequisites
+## Prerequisites
 
 - Node.js 18+
-- npm or pnpm
-- MuzieRTC API credentials (get from your MuzieRTC account)
+- npm
+- MuzieRTC API credentials (contact MuzieRTC for access)
 
-### Install @hiyve Packages
+## Available Packages
 
-All `@hiyve/*` packages are hosted on the Hiyve npm registry:
-
-```
-https://s3.amazonaws.com/muzie.media/npm-registry
-```
-
-Packages are referenced directly via URL in package.json:
-
-```json
-{
-  "dependencies": {
-    "@hiyve/client-provider": "https://s3.amazonaws.com/muzie.media/npm-registry/@hiyve/client-provider/client-provider-latest.tgz",
-    "@hiyve/video-grid": "https://s3.amazonaws.com/muzie.media/npm-registry/@hiyve/video-grid/video-grid-latest.tgz"
-  }
-}
-```
-
-### Available Packages
+All `@hiyve/*` packages are hosted on S3 and referenced directly via URL in package.json:
 
 | Package | Description |
 |---------|-------------|
@@ -50,6 +51,21 @@ Packages are referenced directly via URL in package.json:
 | `@hiyve/waiting-room` | Waiting room components |
 | `@hiyve/file-manager` | File management in rooms |
 | `@hiyve/mood-analysis` | Sentiment/mood detection |
+| `@hiyve/sidebar` | Tabbed sidebar container |
+| `@hiyve/whiteboard` | Collaborative whiteboard |
+
+### Package URLs
+
+Packages are installed from S3 URLs in package.json:
+
+```json
+{
+  "dependencies": {
+    "@hiyve/client-provider": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-client-provider/hiyve-client-provider-latest.tgz",
+    "@hiyve/video-grid": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-video-grid/hiyve-video-grid-latest.tgz"
+  }
+}
+```
 
 ## Examples
 
@@ -68,24 +84,9 @@ A complete video conferencing application demonstrating all features:
 - Waiting room
 - File management
 - Device selection & preview
+- Collaborative whiteboard
 
-**Run the example:**
-
-```bash
-cd full-example
-
-# Install dependencies
-npm run setup
-
-# Configure your MuzieRTC credentials
-cp server/.env.example server/.env
-# Edit server/.env with your API key and secret
-
-# Start development server
-npm run dev
-```
-
-Open http://localhost:5173
+See [full-example/README.md](full-example/README.md) for details.
 
 ## Architecture
 
@@ -215,13 +216,9 @@ app.post('/api/room-token', async (req, res) => {
 
 ## Documentation
 
-See the JSDoc comments in each example component for detailed documentation:
-
-- `src/main.tsx` - Provider setup
-- `src/App.tsx` - Component overview and hooks reference
-- `src/components/VideoRoom.tsx` - Customization examples
-- `src/components/Sidebar.tsx` - Multiple hooks usage
+- [Full Example README](full-example/README.md) - Detailed setup and usage
+- [API Documentation](https://doawc2271w91z.cloudfront.net/docs/hiyve-components/latest/index.html) - Component API reference
 
 ## License
 
-Commercial IWantToPractice, LLC 2025
+Commercial - IWantToPractice, LLC 2025

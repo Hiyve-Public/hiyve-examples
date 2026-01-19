@@ -2,37 +2,58 @@
 
 A complete video conferencing application demonstrating all `@hiyve/*` packages.
 
-## Features
-
-- ✅ Create/join video rooms
-- ✅ Real-time video/audio with WebRTC
-- ✅ Mute/unmute audio and video
-- ✅ Screen sharing
-- ✅ Recording with auto-compose
-- ✅ Live transcription (captions)
-- ✅ Mood/sentiment analysis
-- ✅ Real-time chat
-- ✅ Participant list
-- ✅ Waiting room
-- ✅ File management
-- ✅ Device selection & preview
-- ✅ Audio gain control
-
 ## Quick Start
 
+### 1. Install Dependencies
+
 ```bash
-# 1. Install dependencies
 npm run setup
+```
 
-# 2. Configure server credentials
+This installs both frontend and server dependencies.
+
+### 2. Configure Server Credentials
+
+```bash
 cp server/.env.example server/.env
-# Edit server/.env with your MuzieRTC API key and secret
+```
 
-# 3. Start dev server (frontend + backend)
+Edit `server/.env` with your MuzieRTC credentials:
+
+```env
+APIKEY=your-muzie-api-key
+CLIENT_SECRET=your-muzie-secret
+SERVER_REGION=us-west-2
+```
+
+Contact MuzieRTC for API credentials if you don't have them.
+
+### 3. Start the App
+
+```bash
 npm run dev
 ```
 
+This starts both the frontend (port 5173) and backend (port 3001).
+
 Open http://localhost:5173
+
+## Features
+
+- Create/join video rooms
+- Real-time video/audio with WebRTC
+- Mute/unmute audio and video
+- Screen sharing
+- Recording with auto-compose
+- Live transcription (captions)
+- Mood/sentiment analysis
+- Real-time chat
+- Participant list
+- Waiting room
+- File management
+- Device selection & preview
+- Audio gain control
+- Collaborative whiteboard
 
 ## Packages Used
 
@@ -40,6 +61,7 @@ Open http://localhost:5173
 |---------|------------|---------|
 | `@hiyve/client-provider` | ClientProvider, hooks | State management |
 | `@hiyve/video-grid` | VideoGrid | Video tile layout |
+| `@hiyve/video-tile` | VideoTile, LocalVideoTile | Individual tiles |
 | `@hiyve/control-bar` | ControlBar | Media controls |
 | `@hiyve/chat` | ChatPanel | Text chat |
 | `@hiyve/participant-list` | ParticipantList | User list |
@@ -50,6 +72,8 @@ Open http://localhost:5173
 | `@hiyve/waiting-room` | WaitingRoomSetup, WaitingRoomGuest | Waiting room UI |
 | `@hiyve/file-manager` | FileManager | File management |
 | `@hiyve/mood-analysis` | MoodAnalysisProvider | Sentiment detection |
+| `@hiyve/sidebar` | Sidebar | Tabbed sidebar container |
+| `@hiyve/whiteboard` | Whiteboard | Collaborative drawing |
 
 ## Architecture
 
@@ -169,41 +193,46 @@ The ControlBar includes an "Intelligence Mode" that enables:
 />
 ```
 
-## Server Setup
+## Server API
 
-Create `server/.env`:
+The backend server provides:
 
-```env
-APIKEY=your-muzie-api-key
-CLIENT_SECRET=your-muzie-secret
-SERVER_REGION=us-west-2
-```
-
-The server provides:
-- `POST /api/generate-room-token` - Generate room token
-- `GET /api/health` - Health check
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/generate-room-token` | POST | Generate MuzieRTC room token |
+| `/api/health` | GET | Health check |
 
 ## Troubleshooting
 
 ### "Server not configured" error
-Create `server/.env` with valid API credentials.
+Create `server/.env` with valid MuzieRTC API credentials.
 
 ### "Cannot connect to server" error
-Ensure server is running on port 3001. Run `npm run dev` from this directory.
+Ensure the server is running on port 3001. Run `npm run dev` to start both frontend and backend.
 
 ### Camera/microphone not working
-Grant camera and microphone permissions in browser settings.
+Grant camera and microphone permissions in your browser settings.
 
 ### Transcriptions not appearing
-Transcriptions are only sent to the room owner. Make sure you created the room (not joined).
+Transcriptions are only sent to the room owner. Make sure you created the room (not joined as guest).
+
+### "prop-types" or module errors
+Clear Vite cache and restart:
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
 
 ## Development
 
 ```bash
-# Frontend only
+# Start both frontend and backend
+npm run dev
+
+# Frontend only (port 5173)
 npm run dev:client
 
-# Server only
+# Server only (port 3001)
 npm run dev:server
 
 # Build for production
@@ -212,15 +241,15 @@ npm run build
 
 ## Learn More
 
-See the JSDoc comments in:
+See the JSDoc comments in source files:
 - `src/main.tsx` - Provider setup documentation
-- `src/App.tsx` - Overview and component usage documentation
+- `src/App.tsx` - Overview and component usage
 - `src/components/JoinForm.tsx` - Room creation/join with `useConnection`
 - `src/components/VideoRoom.tsx` - Main room view with customization examples
 - `src/components/Sidebar.tsx` - Tabbed sidebar with multiple hooks
 - `src/components/WaitingScreen.tsx` - Waiting room with `useWaitingRoom`
 
-Each component file documents:
-- What hooks it uses
-- Props it accepts
-- Example usage
+## API Documentation
+
+Full component API documentation:
+https://doawc2271w91z.cloudfront.net/docs/hiyve-components/latest/index.html
