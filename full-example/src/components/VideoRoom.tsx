@@ -300,6 +300,7 @@ export function VideoRoom({ userName }: VideoRoomProps) {
             showSettings
             showLayoutSelector
             showRecordingMenu
+            showHandRaise
             intelligenceConfig={intelligenceConfig}
             onIntelligenceConfigChange={setIntelligenceConfig}
             layout={layout}
