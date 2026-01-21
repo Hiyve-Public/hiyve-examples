@@ -59,7 +59,13 @@ import {
   type IntelligenceConfig,
   type LayoutDefinition,
 } from '@hiyve/control-bar';
-import { VideoGrid, type CustomLayoutHandler, type TilePosition } from '@hiyve/video-grid';
+import {
+  VideoGrid,
+  type CustomLayoutHandler,
+  type TilePosition,
+  type VideoTileOverlayElement,
+  type LocalVideoTileOverlayElement,
+} from '@hiyve/video-grid';
 import { WaitingRoomAdmittance } from '@hiyve/waiting-room';
 import {
   RecordingIndicator,
@@ -196,6 +202,21 @@ export function VideoRoom({ userName }: VideoRoomProps) {
     []
   );
 
+  // Custom overlay order for video tiles
+  // This controls the render order of elements at the same position.
+  // Elements listed first appear first (leftmost for horizontal, topmost for vertical).
+  // Here we put engagement before mood so engagement appears to the left of mood.
+  const tileOverlayOrder = useMemo<VideoTileOverlayElement[]>(
+    () => ['engagement', 'mood', 'name', 'status', 'controls'],
+    []
+  );
+
+  // Custom overlay order for local video tile (includes indicator and timer)
+  const localTileOverlayOrder = useMemo<LocalVideoTileOverlayElement[]>(
+    () => ['indicator', 'timer', 'engagement', 'mood', 'name', 'status', 'controls'],
+    []
+  );
+
   // Copy room name to clipboard
   const handleCopyRoomName = useCallback(() => {
     if (room?.name) {
@@ -284,11 +305,16 @@ export function VideoRoom({ userName }: VideoRoomProps) {
             showTimer
             showZoom
             showNames
+            showEngagement
             labelPosition="bottom-left"
             statusPosition="top-right"
             controlPosition="bottom-right"
             indicatorPosition="top-left"
             timerPosition="top-right"
+            moodPosition="top-left"
+            engagementPosition="top-left"
+            tileOverlayOrder={tileOverlayOrder}
+            localTileOverlayOrder={localTileOverlayOrder}
             sx={{ flex: 1 }}
           />
 

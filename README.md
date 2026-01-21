@@ -40,19 +40,20 @@ All `@hiyve/*` packages are hosted on S3 and referenced directly via URL in pack
 |---------|-------------|
 | `@hiyve/client-provider` | Core state management, hooks, and WebRTC client wrapper |
 | `@hiyve/video-grid` | Auto-layout video grid with multiple layout modes |
-| `@hiyve/video-tile` | Individual video tile components |
-| `@hiyve/control-bar` | Media controls, recording, screen share |
+| `@hiyve/video-tile` | Individual video tile components with mood indicators |
+| `@hiyve/control-bar` | Media controls, recording, screen share, intelligence mode |
 | `@hiyve/chat` | Real-time text chat |
-| `@hiyve/participant-list` | Participant list with mute indicators |
+| `@hiyve/participant-list` | Participant list with mute/hand raise indicators |
 | `@hiyve/transcription` | Live transcription/captions display |
 | `@hiyve/recording` | Recording indicator and controls |
-| `@hiyve/device-selector` | Camera/microphone device selection |
+| `@hiyve/device-selector` | Camera/microphone device selection and preview |
 | `@hiyve/audio-monitor` | Audio level visualization and gain control |
-| `@hiyve/waiting-room` | Waiting room components |
-| `@hiyve/file-manager` | File management in rooms |
-| `@hiyve/mood-analysis` | Sentiment/mood detection |
-| `@hiyve/sidebar` | Tabbed sidebar container |
-| `@hiyve/whiteboard` | Collaborative whiteboard |
+| `@hiyve/waiting-room` | Waiting room setup and guest components |
+| `@hiyve/file-manager` | File management with custom viewer support |
+| `@hiyve/mood-analysis` | Real-time sentiment/mood detection |
+| `@hiyve/sidebar` | Configurable tabbed sidebar container |
+| `@hiyve/whiteboard` | Collaborative whiteboard with real-time sync |
+| `@hiyve/qa` | Q&A panel with questions, voting, answers, and auto-save |
 
 ### Package URLs
 
@@ -62,7 +63,8 @@ Packages are installed from S3 URLs in package.json:
 {
   "dependencies": {
     "@hiyve/client-provider": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-client-provider/hiyve-client-provider-latest.tgz",
-    "@hiyve/video-grid": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-video-grid/hiyve-video-grid-latest.tgz"
+    "@hiyve/video-grid": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-video-grid/hiyve-video-grid-latest.tgz",
+    "@hiyve/qa": "https://s3.amazonaws.com/muzie.media/npm-registry/hiyve-qa/hiyve-qa-latest.tgz"
   }
 }
 ```
@@ -80,9 +82,10 @@ A complete video conferencing application demonstrating all features:
 - Live transcription (captions)
 - Mood/sentiment analysis
 - Real-time chat
-- Participant list
+- Participant list with hand raising
 - Waiting room
-- File management
+- File management with custom viewers
+- Q&A panel (questions, upvoting, answers, auto-save)
 - Device selection & preview
 - Collaborative whiteboard
 
@@ -96,6 +99,8 @@ All `@hiyve/*` components work inside a `ClientProvider`:
 
 ```tsx
 import { ClientProvider } from '@hiyve/client-provider';
+import { FileCacheProvider } from '@hiyve/file-manager';
+import { MoodAnalysisProvider } from '@hiyve/mood-analysis';
 import { VideoGrid } from '@hiyve/video-grid';
 import { ControlBar } from '@hiyve/control-bar';
 
@@ -108,7 +113,11 @@ function App() {
         return (await res.json()).roomToken;
       }}
     >
-      <VideoRoom />
+      <FileCacheProvider>
+        <MoodAnalysisProvider>
+          <VideoRoom />
+        </MoodAnalysisProvider>
+      </FileCacheProvider>
     </ClientProvider>
   );
 }
@@ -158,6 +167,14 @@ const { isRecording, startRecording, stopRecording } = useRecording();
 const { isTranscribing, transcriptions } = useTranscription();
 const { messages, sendMessage } = useChat();
 const { waitingUsers, admitUser, rejectUser } = useWaitingRoom();
+
+// Q&A (from @hiyve/qa)
+import { useQAListener } from '@hiyve/qa';
+useQAListener({ isOwner, localUserId, questions, onQuestionsChange });
+
+// File Management (from @hiyve/file-manager)
+import { useFileCache } from '@hiyve/file-manager';
+const { isReady, getFileTree, uploadFile } = useFileCache();
 ```
 
 ## Customization
@@ -192,6 +209,18 @@ All components support customization via props:
 
 // MUI sx prop
 <ChatPanel sx={{ height: '100%', background: '#1a1a1a' }} />
+
+// Custom file viewers (extensible viewer system)
+import { FileManager, type CustomViewerMap } from '@hiyve/file-manager';
+import { QASessionViewer, type QASessionFile } from '@hiyve/qa';
+
+const customViewers: CustomViewerMap = {
+  'qa-session': (data, file, onClose) => (
+    <QASessionViewer sessionData={data as QASessionFile} onClose={onClose} />
+  ),
+};
+
+<FileManager customViewers={customViewers} />
 ```
 
 ## Server Setup
@@ -214,6 +243,38 @@ app.post('/api/room-token', async (req, res) => {
 });
 ```
 
+## Development Workflow
+
+For developers working on `hiyve-components` alongside examples:
+
+### Toggle Between Local and S3 Packages
+
+```bash
+# From hiyve-examples directory:
+
+# Switch to local packages (for development)
+./toggle-packages.sh dev
+
+# Switch to S3 packages (for production/testing)
+./toggle-packages.sh prod
+
+# Check current mode
+./toggle-packages.sh status
+```
+
+**Important:** Always run `./toggle-packages.sh prod` before committing to ensure the examples reference S3 packages.
+
+### Package Scripts
+
+```bash
+# Check which packages are local vs S3
+npm run packages:status
+
+# Switch modes (without rebuild)
+npm run packages:dev
+npm run packages:prod
+```
+
 ## Documentation
 
 - [Full Example README](full-example/README.md) - Detailed setup and usage
@@ -221,4 +282,4 @@ app.post('/api/room-token', async (req, res) => {
 
 ## License
 
-Commercial - IWantToPractice, LLC 2025
+Commercial - IWantToPractice, LLC 2026

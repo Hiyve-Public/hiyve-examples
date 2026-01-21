@@ -46,15 +46,18 @@ Open http://localhost:5173
 - Screen sharing
 - Recording with auto-compose
 - Live transcription (captions)
-- Mood/sentiment analysis
+- Mood/sentiment analysis with visual indicators
+- Engagement tracking (attentive, distracted, looking away)
 - Real-time chat
-- Participant list
+- Participant list with hand raising
+- Hand raise notifications and queue
 - Waiting room
 - File management with custom viewers
 - Q&A panel (questions, upvoting, answers, auto-save)
 - Device selection & preview
 - Audio gain control
 - Collaborative whiteboard
+- Customizable overlay order for video tiles
 
 ## Packages Used
 
@@ -71,11 +74,11 @@ Open http://localhost:5173
 | `@hiyve/device-selector` | DevicePreview | Camera/mic selection |
 | `@hiyve/audio-monitor` | GainControl | Mic volume control |
 | `@hiyve/waiting-room` | WaitingRoomSetup, WaitingRoomGuest | Waiting room UI |
-| `@hiyve/file-manager` | FileManager | File management |
+| `@hiyve/file-manager` | FileManager, FileCacheProvider | File management |
 | `@hiyve/mood-analysis` | MoodAnalysisProvider | Sentiment detection |
 | `@hiyve/sidebar` | Sidebar | Tabbed sidebar container |
-| `@hiyve/whiteboard` | Whiteboard | Collaborative drawing |
-| `@hiyve/qa` | QAPanel, QASessionViewer | Questions & answers |
+| `@hiyve/whiteboard` | Whiteboard, CreateWhiteboardDialog | Collaborative drawing |
+| `@hiyve/qa` | QAPanel, QASessionViewer, useQAListener | Questions & answers |
 
 ## Architecture
 
@@ -130,6 +133,7 @@ const { isRecording, recordingDuration, startRecording, stopRecording } = useRec
 const { isTranscribing, transcriptions, enrichTranscription } = useTranscription();
 const { messages, unreadCount, sendMessage, clearUnread } = useChat();
 const { waitingUsers, admitUser, rejectUser } = useWaitingRoom();
+const { isHandRaised, raiseHand, lowerHand, toggleHandRaise, raisedHands } = useHandRaise();
 
 // Audio Processing
 const { feedbackDetected, setGain } = useAudioProcessing();
@@ -178,6 +182,17 @@ All components support customization via props:
 // MUI sx prop
 <VideoGrid sx={{ flex: 1, background: '#1a1a1a' }} />
 
+// Custom overlay order (controls render order of elements at same position)
+import { VideoGrid, type VideoTileOverlayElement, type LocalVideoTileOverlayElement } from '@hiyve/video-grid';
+
+const tileOverlayOrder: VideoTileOverlayElement[] = ['engagement', 'mood', 'name', 'status', 'controls'];
+const localTileOverlayOrder: LocalVideoTileOverlayElement[] = ['indicator', 'timer', 'engagement', 'mood', 'name', 'status', 'controls'];
+
+<VideoGrid
+  tileOverlayOrder={tileOverlayOrder}
+  localTileOverlayOrder={localTileOverlayOrder}
+/>
+
 // Custom file viewers (for specialized file types)
 import { FileManager, type CustomViewerMap } from '@hiyve/file-manager';
 import { QASessionViewer, type QASessionFile } from '@hiyve/qa';
@@ -189,6 +204,37 @@ const customViewers: CustomViewerMap = {
 };
 
 <FileManager customViewers={customViewers} />
+```
+
+## Q&A Feature
+
+The Q&A panel allows participants to ask questions during a meeting:
+
+- **Posting questions**: Any participant can post questions
+- **Upvoting**: Participants can upvote questions to prioritize them
+- **Answering**: Room owner/moderator can answer questions
+- **Pinning**: Owner can pin important questions to the top
+- **Sorting**: Sort by newest, most votes, or unanswered
+- **Auto-save**: Q&A sessions are automatically saved to room files
+- **Session viewer**: View saved Q&A sessions in the file manager
+
+```tsx
+import { QAPanel, useQAListener } from '@hiyve/qa';
+
+// Keep Q&A state synced even when tab is hidden
+useQAListener({
+  isOwner,
+  localUserId,
+  questions,
+  onQuestionsChange: setQuestions,
+});
+
+<QAPanel
+  initialQuestions={questions}
+  onQuestionsChange={setQuestions}
+  enableAutoSave={true}
+  onAutoSave={(fileId) => console.log('Saved to:', fileId)}
+/>
 ```
 
 ## Intelligence Mode
@@ -220,6 +266,56 @@ The backend server provides:
 | `/api/generate-room-token` | POST | Generate MuzieRTC room token |
 | `/api/health` | GET | Health check |
 
+## Development
+
+### Basic Commands
+
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Frontend only (port 5173)
+npm run dev:client
+
+# Server only (port 3001)
+npm run dev:server
+
+# Build for production
+npm run build
+```
+
+### Toggle Between Local and S3 Packages
+
+For development with local `hiyve-components`:
+
+```bash
+# From the hiyve-examples root directory:
+
+# Switch to local packages (builds hiyve-components first)
+./toggle-packages.sh dev
+
+# Switch to S3 packages
+./toggle-packages.sh prod
+
+# Check current mode
+./toggle-packages.sh status
+```
+
+Or use npm scripts within full-example:
+
+```bash
+# Check current mode
+npm run packages:status
+
+# Switch to dev mode (local packages)
+npm run packages:dev
+
+# Switch to prod mode (S3 packages)
+npm run packages:prod
+```
+
+**Important:** Always run `./toggle-packages.sh prod` before committing to the examples repo.
+
 ## Troubleshooting
 
 ### "Server not configured" error
@@ -241,20 +337,12 @@ rm -rf node_modules/.vite
 npm run dev
 ```
 
-## Development
-
+### Integrity checksum errors during npm install
+Clear npm cache and package-lock.json:
 ```bash
-# Start both frontend and backend
-npm run dev
-
-# Frontend only (port 5173)
-npm run dev:client
-
-# Server only (port 3001)
-npm run dev:server
-
-# Build for production
-npm run build
+rm -rf node_modules package-lock.json
+npm cache clean --force
+npm install
 ```
 
 ## Learn More
