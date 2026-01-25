@@ -13,7 +13,11 @@
       "Bash(timeout 10 npm run dev:*)",
       "Bash(ls:*)",
       "Bash(./toggle-packages.sh:*)",
-      "Bash(node scripts/toggle-packages.js:*)"
+      "Bash(node scripts/toggle-packages.js:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run build:*)"
     ]
   }
 }

@@ -1,12 +1,13 @@
 # Token Room Example
 
-A minimal example demonstrating token-based room joining with shareable invite links.
+A minimal example demonstrating token-based room joining with shareable invite links using the Hiyve SDK.
 
 ## Features
 
 - **Room Creation**: Owner creates a room and joins automatically
-- **Invite Links**: Owner generates shareable invite links with join tokens
+- **Invite Links**: Owner generates shareable invite links with configurable options
 - **Token-Based Joining**: Guests join using invite links (no room name needed)
+- **Password Protection**: Optional password protection for invite links
 - **Simple Video Room**: Basic video grid with audio/video controls
 
 ## Quick Start
@@ -52,13 +53,14 @@ A minimal example demonstrating token-based room joining with shareable invite l
 2. Enter your name and room name
 3. Click "Create Room"
 4. Once in the room, click the share icon to get an invite link
-5. Copy and share the link with guests
+5. Configure link options (type, expiration, password)
+6. Copy and share the link with guests
 
 ### Guest Flow
 
 1. Receive an invite link from the owner
 2. Open the link in your browser
-3. Enter your display name
+3. Enter your display name (and password if required)
 4. Click "Join Room"
 5. You're in the video call!
 
@@ -68,7 +70,7 @@ A minimal example demonstrating token-based room joining with shareable invite l
 https://example.com/join?joinToken={token}&region={region}
 ```
 
-- `joinToken`: 32-character hex string identifying the invite
+- `joinToken`: Encoded token identifying the invite
 - `region`: Server region (e.g., us-west-2)
 
 The room name is NOT in the URL - it's retrieved server-side when validating the token.
@@ -86,6 +88,9 @@ When generating invite links, owners can configure:
   - 1 day
   - 1 week
 
+- **Password** (optional):
+  - Add password protection for extra security
+
 ## Project Structure
 
 ```
@@ -95,9 +100,9 @@ token-room-example/
 │   ├── App.tsx               # Routing based on URL and state
 │   └── components/
 │       ├── CreateRoom.tsx    # Owner: create room form
-│       ├── JoinRoom.tsx      # Guest: join via token
+│       ├── JoinRoom.tsx      # Guest: join via token (uses SDK)
 │       ├── VideoRoom.tsx     # Simple video room
-│       └── InviteLinkDisplay.tsx  # Generate/share invite link
+│       └── InviteLinkDisplay.tsx  # Generate/share invite link (uses SDK)
 ├── server/
 │   ├── server.js             # Room token generation API
 │   └── .env.example          # Environment template
@@ -106,10 +111,27 @@ token-room-example/
 └── README.md
 ```
 
+## SDK Components
+
+This example uses reusable components from the Hiyve SDK:
+
+### @hiyve/join-token
+
+- **`InviteLinkDialog`** - Dialog for creating and sharing invite links
+- **`JoinWithTokenForm`** - Form for joining rooms via invite tokens
+
+These components handle all the complexity of token generation, validation, and error handling.
+
+### @hiyve/client-provider
+
+- **`useJoinToken`** - Hook for programmatic token validation and joining
+- Error code constants: `TOKEN_NOT_FOUND`, `TOKEN_EXPIRED`, `INVALID_PASSWORD`, etc.
+
 ## Dependencies
 
 ### Frontend
-- `@hiyve/client-provider` - State management
+- `@hiyve/client-provider` - State management and hooks
+- `@hiyve/join-token` - Invite link components
 - `@hiyve/video-grid` - Video layout
 - `@hiyve/control-bar` - Media controls
 - React 18, MUI 5
@@ -142,6 +164,7 @@ Health check endpoint.
 |---------|-------------------|--------------|
 | Room Creation | Yes | Yes |
 | Invite Links | Yes (token-based) | No |
+| Password Protection | Yes | No |
 | Video Grid | Yes | Yes |
 | Control Bar | Basic | Full |
 | Sidebar | No | Yes |
@@ -151,15 +174,29 @@ Health check endpoint.
 | Waiting Room | No | Yes |
 | File Sharing | No | Yes |
 
-This example is intentionally minimal to demonstrate the token-based joining flow.
+This example demonstrates the token-based joining flow with minimal complexity.
 
 ## Troubleshooting
 
-### "Invalid or expired invite link"
+### "Invalid invite link"
 
-- The token may have expired - ask for a new link
-- The token may be for a different region - check the region parameter
-- Individual tokens can only be used once
+- The token may be malformed - check the URL
+- Try generating a new invite link
+
+### "This invite link has expired"
+
+- The token has passed its expiration time
+- Ask the room owner for a new link
+
+### "Incorrect password"
+
+- The password entered doesn't match
+- Check with the room owner for the correct password
+
+### "You are not authorized"
+
+- Individual tokens are restricted to a specific user ID
+- Contact the room owner for a link meant for you
 
 ### "Failed to generate room token"
 
