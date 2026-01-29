@@ -29,6 +29,10 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# Credentials (collected early, used throughout)
+HIYVE_APIKEY=""
+HIYVE_CLIENT_SECRET=""
+
 # Parse arguments
 QUICK_MODE=false
 TARGET_EXAMPLE=""
@@ -108,57 +112,79 @@ check_npm() {
     print_status "npm $(npm -v) detected"
 }
 
-# Check and setup Hiyve authentication
-check_hiyve_auth() {
-    print_step "Checking Hiyve authentication..."
-
-    # Check if @hiyve registry is configured in user's npmrc
-    if grep -q "@hiyve:registry=https://console.hiyve.dev/api/registry" ~/.npmrc 2>/dev/null; then
-        # Also check for auth token
-        if grep -q "console.hiyve.dev/api/registry/:_authToken" ~/.npmrc 2>/dev/null; then
-            print_status "Hiyve authentication configured"
-            return 0
-        fi
-    fi
-
+# Collect Hiyve credentials (API Key and Client Secret)
+collect_credentials() {
+    print_step "Hiyve API Credentials"
     echo ""
-    print_warning "Hiyve authentication not configured."
+    echo "  The @hiyve/* packages require authentication to install,"
+    echo "  and the server needs credentials to generate room tokens."
     echo ""
-    echo "  The @hiyve/* packages require authentication to install."
-    echo "  You need a Hiyve API key to access these packages."
+    echo "  Get your credentials at: ${CYAN}https://console.hiyve.dev${NC}"
     echo ""
 
     if [ "$QUICK_MODE" = true ]; then
-        print_warning "Quick mode: skipping authentication setup."
-        print_warning "Run 'npx hiyve-cli login' manually before npm install."
+        print_warning "Quick mode: skipping credential collection."
+        print_warning "You'll need to configure credentials manually."
         return 0
     fi
 
-    read -p "  Do you have a Hiyve API key? [y/N] " -n 1 -r
+    # Check if already authenticated with npm registry
+    if grep -q "@hiyve:registry=https://console.hiyve.dev/api/registry" ~/.npmrc 2>/dev/null && \
+       grep -q "console.hiyve.dev/api/registry/:_authToken" ~/.npmrc 2>/dev/null; then
+        print_status "npm registry authentication already configured"
+        echo ""
+        echo "  Do you want to configure server credentials (.env files)?"
+        read -p "  Enter your API Key (or press Enter to skip): " HIYVE_APIKEY
+        if [ -n "$HIYVE_APIKEY" ]; then
+            read -p "  Enter your Client Secret: " HIYVE_CLIENT_SECRET
+        fi
+        return 0
+    fi
+
+    # Need to collect credentials for npm auth
+    read -p "  Enter your API Key: " HIYVE_APIKEY
     echo ""
 
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [ -z "$HIYVE_APIKEY" ]; then
+        print_error "API Key is required to install @hiyve/* packages"
         echo ""
-        print_info "Running Hiyve CLI login..."
+        echo "  Get your API key at: https://console.hiyve.dev"
         echo ""
-        if npx hiyve-cli login; then
-            print_status "Hiyve authentication configured"
-        else
-            print_error "Authentication failed"
-            echo ""
-            echo "  Please try again with: npx hiyve-cli login"
-            echo "  Or get an API key at: https://console.hiyve.dev"
-            echo ""
-            exit 1
-        fi
+        exit 1
+    fi
+
+    read -p "  Enter your Client Secret: " HIYVE_CLIENT_SECRET
+    echo ""
+}
+
+# Setup npm registry authentication
+setup_npm_auth() {
+    print_step "Configuring npm registry authentication..."
+
+    # Check if already configured
+    if grep -q "@hiyve:registry=https://console.hiyve.dev/api/registry" ~/.npmrc 2>/dev/null && \
+       grep -q "console.hiyve.dev/api/registry/:_authToken" ~/.npmrc 2>/dev/null; then
+        print_status "npm registry already configured"
+        return 0
+    fi
+
+    if [ -z "$HIYVE_APIKEY" ]; then
+        print_error "No API key provided - cannot configure npm registry"
+        echo ""
+        echo "  Run: npx hiyve-cli login"
+        echo ""
+        exit 1
+    fi
+
+    # Run hiyve-cli login with the API key
+    echo ""
+    print_info "Running hiyve-cli login..."
+    if echo "$HIYVE_APIKEY" | npx hiyve-cli login; then
+        print_status "npm registry authentication configured"
     else
+        print_error "Failed to configure npm registry"
         echo ""
-        print_info "To get a Hiyve API key:"
-        echo "  1. Visit https://console.hiyve.dev"
-        echo "  2. Create an account or sign in"
-        echo "  3. Generate an API key from your dashboard"
-        echo ""
-        print_info "Then run: npx hiyve-cli login"
+        echo "  Try running manually: npx hiyve-cli login"
         echo ""
         exit 1
     fi
@@ -217,75 +243,38 @@ setup_example_env() {
         return 0
     fi
 
-    if [ -f "$ENV_FILE" ]; then
-        print_status "$EXAMPLE_NAME environment file already exists"
-
-        # Check if it's configured
-        if grep -q "your-api-key-here\|your-client-secret-here" "$ENV_FILE" 2>/dev/null; then
-            print_warning "$EXAMPLE_NAME environment file needs configuration"
-            return 1
-        fi
-    else
-        print_info "Creating $EXAMPLE_NAME environment file from template..."
+    # Create env file from template if it doesn't exist
+    if [ ! -f "$ENV_FILE" ]; then
         cp "$ENV_EXAMPLE" "$ENV_FILE"
-        print_status "$EXAMPLE_NAME environment file created"
-        return 1
+        print_info "Created $EXAMPLE_NAME environment file"
     fi
-    return 0
+
+    # Update with credentials if provided
+    if [ -n "$HIYVE_APIKEY" ] && [ -n "$HIYVE_CLIENT_SECRET" ]; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/APIKEY=.*/APIKEY=$HIYVE_APIKEY/" "$ENV_FILE"
+            sed -i '' "s/CLIENT_SECRET=.*/CLIENT_SECRET=$HIYVE_CLIENT_SECRET/" "$ENV_FILE"
+        else
+            sed -i "s/APIKEY=.*/APIKEY=$HIYVE_APIKEY/" "$ENV_FILE"
+            sed -i "s/CLIENT_SECRET=.*/CLIENT_SECRET=$HIYVE_CLIENT_SECRET/" "$ENV_FILE"
+        fi
+        print_status "$EXAMPLE_NAME environment configured"
+    else
+        print_warning "$EXAMPLE_NAME .env needs APIKEY and CLIENT_SECRET"
+    fi
 }
 
-# Setup environment file
+# Setup environment files
 setup_env() {
-    print_step "Setting up environment..."
-
-    NEEDS_CONFIG=false
+    print_step "Setting up environment files..."
 
     if [ -n "$TARGET_EXAMPLE" ]; then
-        # Setup only the specified example
-        if ! setup_example_env "$SCRIPT_DIR/$TARGET_EXAMPLE"; then
-            NEEDS_CONFIG=true
-        fi
+        setup_example_env "$SCRIPT_DIR/$TARGET_EXAMPLE"
     else
-        # Setup all examples
-        if ! setup_example_env "$BASIC_EXAMPLE_DIR"; then
-            NEEDS_CONFIG=true
-        fi
-        if ! setup_example_env "$FULL_EXAMPLE_DIR"; then
-            NEEDS_CONFIG=true
-        fi
-        if ! setup_example_env "$TOKEN_EXAMPLE_DIR"; then
-            NEEDS_CONFIG=true
-        fi
-        if ! setup_example_env "$NEXTJS_EXAMPLE_DIR"; then
-            NEEDS_CONFIG=true
-        fi
-    fi
-
-    # Prompt for credentials if needed and not in quick mode
-    if [ "$NEEDS_CONFIG" = true ] && [ "$QUICK_MODE" = false ]; then
-        echo ""
-        echo -e "  ${YELLOW}Hiyve API credentials required${NC}"
-        echo "  Get your credentials from https://console.hiyve.dev"
-        echo ""
-
-        read -p "  Enter your API Key (or press Enter to skip): " APIKEY
-        read -p "  Enter your Client Secret (or press Enter to skip): " CLIENT_SECRET
-
-        if [ -n "$APIKEY" ] && [ -n "$CLIENT_SECRET" ]; then
-            # Update all env files (both server/.env and root .env)
-            for ENV_FILE in "$BASIC_EXAMPLE_DIR/server/.env" "$FULL_EXAMPLE_DIR/server/.env" "$TOKEN_EXAMPLE_DIR/server/.env" "$NEXTJS_EXAMPLE_DIR/.env"; do
-                if [ -f "$ENV_FILE" ]; then
-                    if [[ "$OSTYPE" == "darwin"* ]]; then
-                        sed -i '' "s/APIKEY=.*/APIKEY=$APIKEY/" "$ENV_FILE"
-                        sed -i '' "s/CLIENT_SECRET=.*/CLIENT_SECRET=$CLIENT_SECRET/" "$ENV_FILE"
-                    else
-                        sed -i "s/APIKEY=.*/APIKEY=$APIKEY/" "$ENV_FILE"
-                        sed -i "s/CLIENT_SECRET=.*/CLIENT_SECRET=$CLIENT_SECRET/" "$ENV_FILE"
-                    fi
-                fi
-            done
-            print_status "API credentials configured"
-        fi
+        setup_example_env "$BASIC_EXAMPLE_DIR"
+        setup_example_env "$FULL_EXAMPLE_DIR"
+        setup_example_env "$TOKEN_EXAMPLE_DIR"
+        setup_example_env "$NEXTJS_EXAMPLE_DIR"
     fi
 }
 
@@ -347,7 +336,8 @@ main() {
 
     check_node
     check_npm
-    check_hiyve_auth
+    collect_credentials
+    setup_npm_auth
     install_dependencies
     setup_env
 
