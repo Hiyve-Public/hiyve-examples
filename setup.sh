@@ -116,7 +116,7 @@ check_npm() {
 collect_credentials() {
     print_step "Hiyve API Credentials"
     echo ""
-    echo "  Get your credentials at: ${CYAN}https://console.hiyve.dev${NC}"
+    echo -e "  Get your credentials at: ${CYAN}https://console.hiyve.dev${NC}"
     echo ""
 
     if [ "$QUICK_MODE" = true ]; then
