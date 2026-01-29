@@ -36,7 +36,8 @@
       "Bash(node bin/hiyve.js:*)",
       "Bash(pnpm add:*)",
       "Bash(npm run dev:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(bash:*)"
     ]
   }
 }

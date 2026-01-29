@@ -161,6 +161,27 @@ npm run setup
 npm run dev
 ```
 
+### Next.js Example
+
+A minimal video conferencing app built with **Next.js 14** App Router:
+
+- Next.js App Router with API routes (no separate Express server)
+- Server-side rendering with 'use client' directives
+- Device preview with camera/microphone selection
+- Create or join video rooms
+- Video grid with layout switching
+
+This example shows how to integrate Hiyve SDK with Next.js and demonstrates the differences from Vite-based examples.
+
+See [nextjs-example/README.md](nextjs-example/README.md) for details.
+
+```bash
+cd nextjs-example
+npm install
+npm run dev
+# Open http://localhost:3000
+```
+
 ## Architecture
 
 ### Provider Setup
@@ -350,6 +371,7 @@ npm run packages:prod
 - [Basic Example README](basic-example/README.md) - Simplest video app with minimal packages
 - [Full Example README](full-example/README.md) - Feature-rich example with all components
 - [Token Room Example README](token-room-example/README.md) - Token-based joining with invite links
+- [Next.js Example README](nextjs-example/README.md) - Next.js App Router integration
 - [API Documentation](https://doawc2271w91z.cloudfront.net/docs/hiyve-sdk/latest/index.html) - Component API reference
 
 ## License

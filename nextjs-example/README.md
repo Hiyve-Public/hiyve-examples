@@ -23,10 +23,10 @@ npm install
 Copy the example environment file and add your credentials:
 
 ```bash
-cp .env.local.example .env.local
+cp .env.example .env
 ```
 
-Edit `.env.local` with your Hiyve API credentials from [console.hiyve.dev](https://console.hiyve.dev):
+Edit `.env` with your Hiyve API credentials from [console.hiyve.dev](https://console.hiyve.dev):
 
 ```env
 APIKEY=your-api-key

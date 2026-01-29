@@ -8,14 +8,18 @@
 # Usage:
 #   ./setup.sh                    # Full interactive setup (all examples)
 #   ./setup.sh --quick            # Skip prompts, use defaults
+#   ./setup.sh basic-example      # Setup only basic-example
 #   ./setup.sh full-example       # Setup only full-example
 #   ./setup.sh token-room-example # Setup only token-room-example
+#   ./setup.sh nextjs-example     # Setup only nextjs-example
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASIC_EXAMPLE_DIR="$SCRIPT_DIR/basic-example"
 FULL_EXAMPLE_DIR="$SCRIPT_DIR/full-example"
 TOKEN_EXAMPLE_DIR="$SCRIPT_DIR/token-room-example"
+NEXTJS_EXAMPLE_DIR="$SCRIPT_DIR/nextjs-example"
 
 # Colors
 RED='\033[0;31m'
@@ -34,7 +38,7 @@ for arg in "$@"; do
         --quick|-q)
             QUICK_MODE=true
             ;;
-        full-example|token-room-example)
+        basic-example|full-example|token-room-example|nextjs-example)
             TARGET_EXAMPLE="$arg"
             ;;
     esac
@@ -187,8 +191,10 @@ install_dependencies() {
         install_example_dependencies "$SCRIPT_DIR/$TARGET_EXAMPLE"
     else
         # Install all examples
+        install_example_dependencies "$BASIC_EXAMPLE_DIR"
         install_example_dependencies "$FULL_EXAMPLE_DIR"
         install_example_dependencies "$TOKEN_EXAMPLE_DIR"
+        install_example_dependencies "$NEXTJS_EXAMPLE_DIR"
     fi
 }
 
@@ -197,12 +203,19 @@ setup_example_env() {
     local EXAMPLE_DIR="$1"
     local EXAMPLE_NAME="$(basename "$EXAMPLE_DIR")"
 
-    if [ ! -d "$EXAMPLE_DIR/server" ]; then
-        return
-    fi
+    # Determine env file location (server/.env for Vite examples, .env for Next.js)
+    local ENV_FILE=""
+    local ENV_EXAMPLE=""
 
-    local ENV_FILE="$EXAMPLE_DIR/server/.env"
-    local ENV_EXAMPLE="$EXAMPLE_DIR/server/.env.example"
+    if [ -d "$EXAMPLE_DIR/server" ]; then
+        ENV_FILE="$EXAMPLE_DIR/server/.env"
+        ENV_EXAMPLE="$EXAMPLE_DIR/server/.env.example"
+    elif [ -f "$EXAMPLE_DIR/.env.example" ]; then
+        ENV_FILE="$EXAMPLE_DIR/.env"
+        ENV_EXAMPLE="$EXAMPLE_DIR/.env.example"
+    else
+        return 0
+    fi
 
     if [ -f "$ENV_FILE" ]; then
         print_status "$EXAMPLE_NAME environment file already exists"
@@ -234,10 +247,16 @@ setup_env() {
         fi
     else
         # Setup all examples
+        if ! setup_example_env "$BASIC_EXAMPLE_DIR"; then
+            NEEDS_CONFIG=true
+        fi
         if ! setup_example_env "$FULL_EXAMPLE_DIR"; then
             NEEDS_CONFIG=true
         fi
         if ! setup_example_env "$TOKEN_EXAMPLE_DIR"; then
+            NEEDS_CONFIG=true
+        fi
+        if ! setup_example_env "$NEXTJS_EXAMPLE_DIR"; then
             NEEDS_CONFIG=true
         fi
     fi
@@ -245,16 +264,16 @@ setup_env() {
     # Prompt for credentials if needed and not in quick mode
     if [ "$NEEDS_CONFIG" = true ] && [ "$QUICK_MODE" = false ]; then
         echo ""
-        echo -e "  ${YELLOW}MuzieRTC API credentials required${NC}"
-        echo "  Get your credentials from your MuzieRTC account."
+        echo -e "  ${YELLOW}Hiyve API credentials required${NC}"
+        echo "  Get your credentials from https://console.hiyve.dev"
         echo ""
 
         read -p "  Enter your API Key (or press Enter to skip): " APIKEY
         read -p "  Enter your Client Secret (or press Enter to skip): " CLIENT_SECRET
 
         if [ -n "$APIKEY" ] && [ -n "$CLIENT_SECRET" ]; then
-            # Update all env files
-            for ENV_FILE in "$FULL_EXAMPLE_DIR/server/.env" "$TOKEN_EXAMPLE_DIR/server/.env"; do
+            # Update all env files (both server/.env and root .env)
+            for ENV_FILE in "$BASIC_EXAMPLE_DIR/server/.env" "$FULL_EXAMPLE_DIR/server/.env" "$TOKEN_EXAMPLE_DIR/server/.env" "$NEXTJS_EXAMPLE_DIR/.env"; do
                 if [ -f "$ENV_FILE" ]; then
                     if [[ "$OSTYPE" == "darwin"* ]]; then
                         sed -i '' "s/APIKEY=.*/APIKEY=$APIKEY/" "$ENV_FILE"
@@ -280,7 +299,7 @@ print_success() {
 
     # Check if credentials are configured
     NEEDS_CREDS=false
-    for ENV_FILE in "$FULL_EXAMPLE_DIR/server/.env" "$TOKEN_EXAMPLE_DIR/server/.env"; do
+    for ENV_FILE in "$BASIC_EXAMPLE_DIR/server/.env" "$FULL_EXAMPLE_DIR/server/.env" "$TOKEN_EXAMPLE_DIR/server/.env" "$NEXTJS_EXAMPLE_DIR/.env"; do
         if [ -f "$ENV_FILE" ] && grep -q "your-api-key-here\|your-client-secret-here" "$ENV_FILE" 2>/dev/null; then
             NEEDS_CREDS=true
             break
@@ -290,26 +309,35 @@ print_success() {
     if [ "$NEEDS_CREDS" = true ]; then
         echo -e "${YELLOW}Before starting, configure your API credentials:${NC}"
         echo ""
-        echo "  Edit the .env file in the server folder of the example you want to run:"
+        echo "  Edit the .env file in the example you want to run:"
+        echo "  - basic-example/server/.env"
         echo "  - full-example/server/.env"
         echo "  - token-room-example/server/.env"
+        echo "  - nextjs-example/.env"
         echo ""
         echo "  Set APIKEY and CLIENT_SECRET in the .env file."
-        echo "  Contact MuzieRTC for API credentials if you don't have them."
+        echo "  Get credentials at https://console.hiyve.dev"
         echo ""
     fi
 
     echo -e "${BOLD}Available Examples:${NC}"
     echo ""
+    echo -e "  ${CYAN}Basic Example${NC} - Minimal video room (Vite + Express)"
+    echo -e "    cd basic-example && npm run dev"
+    echo ""
     echo -e "  ${CYAN}Full Example${NC} - Feature-rich video conferencing app"
     echo -e "    cd full-example && npm run dev"
     echo ""
-    echo -e "  ${CYAN}Token Room Example${NC} - Minimal token-based joining"
+    echo -e "  ${CYAN}Token Room Example${NC} - Token-based room joining with invite links"
     echo -e "    cd token-room-example && npm run dev"
     echo ""
-    echo "  Each example starts frontend (port 5173) and backend (port 3001)."
+    echo -e "  ${CYAN}Next.js Example${NC} - Next.js App Router integration"
+    echo -e "    cd nextjs-example && npm run dev"
     echo ""
-    echo -e "  Open ${CYAN}http://localhost:5173${NC} in your browser."
+    echo "  Vite examples start frontend (5173) + backend (3001)."
+    echo "  Next.js runs on port 3000 with API routes built-in."
+    echo ""
+    echo -e "  Open ${CYAN}http://localhost:5173${NC} (Vite) or ${CYAN}http://localhost:3000${NC} (Next.js)"
     echo ""
 }
 
