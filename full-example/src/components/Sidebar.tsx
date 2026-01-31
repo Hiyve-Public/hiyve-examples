@@ -10,6 +10,7 @@
  * - File manager
  * - Whiteboard
  * - Q&A panel
+ * - Polls (live voting)
  * - Captions (owner only)
  *
  * @example
@@ -41,6 +42,8 @@
  * - `useAudioProcessing()` - setGain
  * - `useRecording()` - isRecording (to disable settings)
  * - `useTranscription()` - isTranscribing state
+ * - `useQAListener()` - background Q&A sync
+ * - `usePollListener()` - background polls sync
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -54,6 +57,7 @@ import {
   Draw as WhiteboardIcon,
   Add as AddIcon,
   QuestionAnswer as QAIcon,
+  Poll as PollIcon,
 } from '@mui/icons-material';
 import {
   useRoom,
@@ -72,6 +76,7 @@ import { FileManager, type CustomViewerMap } from '@hiyve/file-manager';
 import { IntelligenceSettings, type IntelligenceConfig } from '@hiyve/control-bar';
 import { Whiteboard, CreateWhiteboardDialog, type WhiteboardFile } from '@hiyve/whiteboard';
 import { QAPanel, useQAListener, QASessionViewer, type Question, type QASessionFile } from '@hiyve/qa';
+import { PollsWindow, usePollListener, type Poll } from '@hiyve/polls';
 
 interface SidebarProps {
   /** Local user's display name */
@@ -94,6 +99,8 @@ export function Sidebar({
   const [showCreateWhiteboardDialog, setShowCreateWhiteboardDialog] = useState(false);
   const [qaQuestions, setQAQuestions] = useState<Question[]>([]);
   const [qaFileId, setQAFileId] = useState<string | null>(null);
+  const [polls, setPolls] = useState<Poll[]>([]);
+  const [pollsFileId, setPollsFileId] = useState<string | null>(null);
 
   // Get state from ClientProvider
   const { isOwner, room } = useRoom();
@@ -109,6 +116,14 @@ export function Sidebar({
     localUserId: localUserId || '',
     questions: qaQuestions,
     onQuestionsChange: setQAQuestions,
+  });
+
+  // Polls listener - stays active even when Polls tab is not visible
+  usePollListener({
+    isOwner,
+    localUserId: localUserId || '',
+    polls,
+    onPollsChange: setPolls,
   });
 
   // Handle tab change
@@ -203,6 +218,12 @@ export function Sidebar({
         label: 'Q&A',
         icon: <QAIcon />,
         tooltip: 'Questions & Answers',
+      },
+      {
+        id: 'polls',
+        label: 'Polls',
+        icon: <PollIcon />,
+        tooltip: 'Live Polls',
       },
     ];
 
@@ -371,6 +392,25 @@ export function Sidebar({
             />
           );
 
+        case 'polls':
+          // Display PollsWindow with synced state from the always-mounted listener
+          return (
+            <PollsWindow
+              showHeader
+              maxHeight="100%"
+              initialPolls={polls}
+              onPollsChange={setPolls}
+              enableAutoSave={isOwner}
+              initialFileId={pollsFileId ?? undefined}
+              onAutoSave={(fileId) => {
+                console.log('[Polls] Auto-saved to file:', fileId);
+                setPollsFileId(fileId);
+              }}
+              onAutoSaveError={(error) => console.error('[Polls] Auto-save error:', error)}
+              sx={{ height: '100%' }}
+            />
+          );
+
         case 'captions':
           return (
             <TranscriptViewer
@@ -407,6 +447,10 @@ export function Sidebar({
       handleShowCreateWhiteboard,
       handleWhiteboardCreated,
       room?.name,
+      polls,
+      pollsFileId,
+      qaQuestions,
+      qaFileId,
     ]
   );
 

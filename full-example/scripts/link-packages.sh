@@ -29,6 +29,7 @@ packages=(
   "file-manager"
   "mood-analysis"
   "participant-list"
+  "polls"
   "qa"
   "recording"
   "sidebar"

@@ -29,6 +29,7 @@
     "@hiyve/file-manager": "latest",
     "@hiyve/mood-analysis": "latest",
     "@hiyve/participant-list": "latest",
+    "@hiyve/polls": "latest",
     "@hiyve/qa": "latest",
     "@hiyve/recording": "latest",
     "@hiyve/streaming": "latest",
