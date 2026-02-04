@@ -1,6 +1,24 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+// Path to hiyve-sdk packages for alias resolution (dev mode only)
+const sdkPackages = path.resolve(__dirname, '../../hiyve-sdk/packages');
+const isDevMode = fs.existsSync(sdkPackages);
+
+// Build aliases for SDK packages when in dev mode
+// This is needed when SDK packages import from each other (e.g., qa imports utilities)
+function getDevAliases() {
+  if (!isDevMode) return {};
+
+  return {
+    '@hiyve/utilities': path.join(sdkPackages, 'utilities'),
+    '@hiyve/session-common': path.join(sdkPackages, 'session-common'),
+    '@hiyve/file-manager': path.join(sdkPackages, 'file-manager'),
+    '@hiyve/client-provider': path.join(sdkPackages, 'client-provider'),
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -16,6 +34,8 @@ export default defineConfig({
     ],
   },
   resolve: {
+    // Alias @hiyve/* packages in dev mode so Vite can resolve internal SDK imports
+    alias: getDevAliases(),
     // Dedupe dependencies to ensure single instance resolution
     // This prevents "multiple instances" warnings for packages shared between
     // hiyve-sdk and full-example
@@ -48,10 +68,10 @@ export default defineConfig({
       ignored: ['!**/node_modules/@hiyve/**'],
     },
     fs: {
-      // Allow serving files from hiyve-sdk
+      // Allow serving files from hiyve-sdk (dev mode only)
       allow: [
         '.',
-        path.resolve(__dirname, '../../hiyve-sdk'),
+        ...(isDevMode ? [path.resolve(__dirname, '../../hiyve-sdk')] : []),
       ],
     },
   },

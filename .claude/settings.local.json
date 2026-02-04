@@ -85,7 +85,16 @@
       "Bash(then)",
       "Bash(curl:*)",
       "Bash(tail:*)",
-      "Bash(npx vite build)"
+      "Bash(npx vite build)",
+      "Bash(pkill:*)",
+      "Bash(head:*)",
+      "Bash(timeout 12 npm run dev:client:*)",
+      "Bash(npm pack:*)",
+      "Bash(tar:*)",
+      "Bash(pnpm pack:*)",
+      "Bash(npm ls:*)",
+      "Bash(pnpm help:*)",
+      "Bash(node -e:*)"
     ]
   }
 }
