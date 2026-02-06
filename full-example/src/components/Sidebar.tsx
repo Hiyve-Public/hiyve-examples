@@ -8,7 +8,6 @@ import {
   People as PeopleIcon,
   Chat as ChatIcon,
   Settings as SettingsIcon,
-  ClosedCaption as CaptionsIcon,
   Folder as FolderIcon,
   Draw as WhiteboardIcon,
   QuestionAnswer as QAIcon,
@@ -22,23 +21,21 @@ import {
   useChat,
   useAudioProcessing,
   useRecording,
-  useTranscription,
   useStreaming,
 } from '@hiyve/client-provider';
-import { StreamingSettingsForm } from '@hiyve/streaming';
+import { StreamingSettingsForm, type StreamingConfig } from '@hiyve/streaming';
 import { Sidebar as HiyveSidebar, type SidebarTab } from '@hiyve/sidebar';
 import { ParticipantList } from '@hiyve/participant-list';
 import { ChatPanel } from '@hiyve/chat';
 import { GainControl, type GainControlLabels } from '@hiyve/audio-monitor';
-import { TranscriptViewer } from '@hiyve/transcription';
 import { FileManager, type CustomViewerMap } from '@hiyve/file-manager';
 import { IntelligenceSettings, type IntelligenceConfig } from '@hiyve/control-bar';
 import { WhiteboardSession } from '@hiyve/whiteboard';
-import { QASession, QASessionViewer, useQAListener, type QASessionFile, type Question } from '@hiyve/qa';
+import { QASession, QASessionViewer, useQASessionState, type QASessionFile } from '@hiyve/qa';
 import { PollsSession, PollsSessionViewer, usePollListener, type PollsSessionFile } from '@hiyve/polls';
 import { NotesSession } from '@hiyve/notes';
 import { AIPanel } from './AIPanel';
-import { type StreamingConfig } from './VideoRoom';
+
 
 interface SidebarProps {
   userName: string;
@@ -67,43 +64,20 @@ export function Sidebar({
   const { unreadCount, clearUnread } = useChat();
   const { setGain } = useAudioProcessing();
   const { isRecording } = useRecording();
-  const { isTranscribing } = useTranscription();
   const { isStreaming } = useStreaming();
 
   // Polls listener - provides hasUnvotedActivePoll for badge notifications
   const { hasUnvotedActivePoll } = usePollListener({ enabled: true });
 
-  // Q&A listener - track questions even when QA tab not active
-  const [qaQuestions, setQAQuestions] = useState<Question[]>([]);
-  const [hasNewQuestion, setHasNewQuestion] = useState(false);
-  const [hasActiveQASession, setHasActiveQASession] = useState(false);
-
-  useQAListener({
-    enabled: true,
+  // Q&A session state - track questions, badges, and session activity
+  const {
+    hasNewQuestion,
+    hasActiveQASession,
+    clearNewQuestionBadge,
+  } = useQASessionState({
     isOwner,
     localUserId: localUserId || '',
-    questions: qaQuestions,
-    onQuestionsChange: (questions) => {
-      setQAQuestions(questions);
-      // If we received questions, session is active
-      if (questions.length > 0) {
-        setHasActiveQASession(true);
-      }
-    },
-    onNewQuestion: () => {
-      // Only show badge if not on Q&A tab
-      if (activeTab !== 'qa') {
-        setHasNewQuestion(true);
-      }
-      setHasActiveQASession(true);
-    },
-    onSessionStarted: () => {
-      // Show badge when Q&A session is started by owner
-      if (activeTab !== 'qa') {
-        setHasNewQuestion(true);
-      }
-      setHasActiveQASession(true);
-    },
+    activeTabId: activeTab,
   });
 
   // Handle tab change
@@ -116,10 +90,10 @@ export function Sidebar({
       }
       // Clear Q&A badge when switching to Q&A tab
       if (tabId === 'qa') {
-        setHasNewQuestion(false);
+        clearNewQuestionBadge();
       }
     },
-    [clearUnread]
+    [clearUnread, clearNewQuestionBadge]
   );
 
   // Handle mic gain change
@@ -165,7 +139,7 @@ export function Sidebar({
     const baseTabs: SidebarTab[] = [
       {
         id: 'participants',
-        label: `(${participantCount + 1})`,
+        label: `(${participantCount + 1})`, // +1 because participantCount excludes the local user
         icon: <PeopleIcon />,
         tooltip: 'Participants',
       },
@@ -216,25 +190,16 @@ export function Sidebar({
       {
         id: 'ai',
         label: 'AI',
-        icon: <AIIcon color={room?.owner ? 'primary' : 'disabled'} />,
-        tooltip: room?.owner ? 'AI Intelligence' : 'Join a room to enable AI features',
+        icon: <AIIcon color={room ? 'primary' : 'disabled'} />,
+        tooltip: room ? 'AI Intelligence' : 'Join a room to enable AI features',
       },
     ];
 
-    // Add captions tab for owners only
-    if (isOwner) {
-      baseTabs.push({
-        id: 'captions',
-        label: 'Captions',
-        icon: <CaptionsIcon color={isTranscribing ? 'primary' : 'inherit'} />,
-        tooltip: 'Captions (owner only)',
-      });
-    }
-
     return baseTabs;
-  }, [participantCount, unreadCount, isOwner, isTranscribing, hasUnvotedActivePoll, hasNewQuestion, room]);
+  }, [participantCount, unreadCount, hasUnvotedActivePoll, hasNewQuestion, room]);
 
   // Render content for each tab
+  // For production apps, consider extracting each case into its own component
   const renderContent = useCallback(
     (tabId: string) => {
       switch (tabId) {
@@ -365,30 +330,20 @@ export function Sidebar({
           return <NotesSession sx={{ height: '100%' }} />;
 
         case 'ai':
-          return room?.owner && room?.name ? (
-            <AIPanel userId={room.owner} roomName={room.name} isOwner={isOwner} />
+          // userId must be an email registered with the Hiyve API key
+          // localUserId should be the user's email from the connection
+          return room?.name && localUserId ? (
+            <AIPanel
+              userId={localUserId}
+              roomName={room.name}
+              onNoteSaved={() => {}}
+            />
           ) : (
             <Box sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Join a room to enable AI features. The AI uses the room owner's
-                credentials for cloud intelligence operations.
+                Join a room to enable AI features.
               </Typography>
             </Box>
-          );
-
-        case 'captions':
-          return (
-            <TranscriptViewer
-              showTimestamps
-              autoScroll
-              groupingWindowMs={3000}
-              emptyMessage={
-                isTranscribing
-                  ? 'Waiting for transcriptions...'
-                  : 'Start Intelligence Mode to see live captions'
-              }
-              sx={{ height: '100%' }}
-            />
           );
 
         default:
@@ -405,11 +360,11 @@ export function Sidebar({
       intelligenceConfig,
       onIntelligenceConfigChange,
       isRecording,
-      isTranscribing,
       isStreaming,
       streamingConfig,
       onStreamingConfigChange,
       room,
+      localUserId,
       hasActiveQASession,
     ]
   );

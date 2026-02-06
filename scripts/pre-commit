@@ -1,0 +1,24 @@
+#!/bin/bash
+# Pre-commit hook: block commits containing local @hiyve/* paths
+# Committed state must always use registry (prod) versions.
+
+EXAMPLES="basic-example full-example token-room-example nextjs-example"
+FOUND=0
+
+for example in $EXAMPLES; do
+  PKG="$example/package.json"
+  if [ -f "$PKG" ]; then
+    if grep -qE '"@hiyve/[^"]+"\s*:\s*"(link:|file:)' "$PKG"; then
+      echo "ERROR: $PKG contains local package paths"
+      FOUND=1
+    fi
+  fi
+done
+
+if [ "$FOUND" -eq 1 ]; then
+  echo ""
+  echo "Commits must use registry (prod) package versions."
+  echo "Run: ./toggle-packages.sh prod"
+  echo ""
+  exit 1
+fi

@@ -103,13 +103,13 @@ check_node() {
     print_status "Node.js $(node -v) detected"
 }
 
-# Check npm
-check_npm() {
-    if ! command -v npm &> /dev/null; then
-        print_error "npm is not installed"
+# Check pnpm
+check_pnpm() {
+    if ! command -v pnpm &> /dev/null; then
+        print_error "pnpm is not installed"
         exit 1
     fi
-    print_status "npm $(npm -v) detected"
+    print_status "pnpm $(pnpm -v) detected"
 }
 
 # Collect and validate Hiyve credentials
@@ -170,13 +170,13 @@ install_example_dependencies() {
 
     print_info "Installing $EXAMPLE_NAME frontend dependencies..."
     cd "$EXAMPLE_DIR"
-    npm install
+    pnpm install
     print_status "$EXAMPLE_NAME frontend dependencies installed"
 
     if [ -d "$EXAMPLE_DIR/server" ]; then
         print_info "Installing $EXAMPLE_NAME server dependencies..."
         cd "$EXAMPLE_DIR/server"
-        npm install
+        pnpm install
         print_status "$EXAMPLE_NAME server dependencies installed"
     fi
 }
@@ -285,16 +285,16 @@ print_success() {
     echo -e "${BOLD}Available Examples:${NC}"
     echo ""
     echo -e "  ${CYAN}Basic Example${NC} - Minimal video room (Vite + Express)"
-    echo -e "    cd basic-example && npm run dev"
+    echo -e "    cd basic-example && pnpm run dev"
     echo ""
     echo -e "  ${CYAN}Full Example${NC} - Feature-rich video conferencing app"
-    echo -e "    cd full-example && npm run dev"
+    echo -e "    cd full-example && pnpm run dev"
     echo ""
     echo -e "  ${CYAN}Token Room Example${NC} - Token-based room joining with invite links"
-    echo -e "    cd token-room-example && npm run dev"
+    echo -e "    cd token-room-example && pnpm run dev"
     echo ""
     echo -e "  ${CYAN}Next.js Example${NC} - Next.js App Router integration"
-    echo -e "    cd nextjs-example && npm run dev"
+    echo -e "    cd nextjs-example && pnpm run dev"
     echo ""
     echo "  Vite examples start frontend (5173) + backend (3001)."
     echo "  Next.js runs on port 3000 with API routes built-in."
@@ -308,7 +308,7 @@ main() {
     print_banner
 
     check_node
-    check_npm
+    check_pnpm
     collect_credentials
     install_dependencies
     setup_env

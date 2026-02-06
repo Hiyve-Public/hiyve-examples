@@ -66,11 +66,11 @@ async function generateRoomToken(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const data = await response.json();
     throw new Error(data.message || 'Failed to generate room token');
   }
-  return (await response.json()).roomToken;
+  return data.roomToken;
 }
 
 /**

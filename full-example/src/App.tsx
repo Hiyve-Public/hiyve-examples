@@ -8,6 +8,7 @@
  * - In room → VideoRoom
  */
 
+import { useState } from 'react';
 import { useConnection, useRoom, useWaitingRoom, useWaitForHost } from '@hiyve/client-provider';
 import { WaitForHostScreen } from '@hiyve/waiting-room';
 import {
@@ -26,8 +27,8 @@ function App() {
   const { isWaiting: isWaitingForHost } = useWaitForHost();
 
   // Read user data from localStorage (persisted by JoinForm)
-  const userName = localStorage.getItem(STORAGE_KEYS.userName) || '';
-  const userRole = (localStorage.getItem(STORAGE_KEYS.userRole) as 'owner' | 'guest') || 'owner';
+  const [userName] = useState(() => localStorage.getItem(STORAGE_KEYS.userName) || '');
+  const [userRole] = useState(() => (localStorage.getItem(STORAGE_KEYS.userRole) as 'owner' | 'guest') || 'owner');
 
   // Waiting for host state (guest joins before host starts)
   if (isWaitingForHost) {

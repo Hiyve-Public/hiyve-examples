@@ -28,7 +28,7 @@ Then start the app:
 
 ```bash
 cd nextjs-example
-npm run dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -38,7 +38,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 #### 1. Install Dependencies
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 #### 2. Configure Environment
@@ -60,7 +60,7 @@ SERVER_REGION=us-west-2
 #### 3. Run Development Server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -117,13 +117,13 @@ To use local SDK packages during development:
 
 ```bash
 # Switch to local packages
-npm run packages:dev
+pnpm run packages:dev
 
 # Switch back to registry packages
-npm run packages:prod
+pnpm run packages:prod
 
 # Check current mode
-npm run packages:status
+pnpm run packages:status
 ```
 
 ## Learn More

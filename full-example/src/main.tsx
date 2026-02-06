@@ -20,6 +20,42 @@ import { MoodAnalysisProvider } from '@hiyve/mood-analysis';
 import { FileCacheProvider } from '@hiyve/file-manager';
 import App from './App';
 
+// Cloud API configuration
+// Environment determines which Hiyve Cloud server to connect to
+const CLOUD_ENVIRONMENT = (import.meta.env.VITE_HIYVE_ENVIRONMENT || 'development') as 'production' | 'development';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
+
+/** Generate a room token from your backend server. */
+async function generateRoomToken(): Promise<string> {
+  const response = await fetch('/api/generate-room-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to generate room token');
+  }
+  return data.roomToken;
+}
+
+/** Generate a cloud token from your backend server for AI features. */
+async function generateCloudToken(): Promise<string> {
+  const response = await fetch('/api/generate-cloud-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to generate cloud token');
+  }
+  return data.cloudToken;
+}
+
 // Wrapper component to show connection errors
 function Root() {
   const [error, setError] = useState<string | null>(null);
@@ -65,42 +101,6 @@ function Root() {
       </Snackbar>
     </ThemeProvider>
   );
-}
-
-// Cloud API configuration
-// Environment determines which Hiyve Cloud server to connect to
-const CLOUD_ENVIRONMENT = (import.meta.env.VITE_HIYVE_ENVIRONMENT || 'development') as 'production' | 'development';
-
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-  },
-});
-
-/** Generate a room token from your backend server. */
-async function generateRoomToken(): Promise<string> {
-  const response = await fetch('/api/generate-room-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to generate room token');
-  }
-  return data.roomToken;
-}
-
-/** Generate a cloud token from your backend server for AI features. */
-async function generateCloudToken(): Promise<string> {
-  const response = await fetch('/api/generate-cloud-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to generate cloud token');
-  }
-  return data.cloudToken;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

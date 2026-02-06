@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+const sdkPath = path.resolve(__dirname, '../../hiyve-sdk');
+const isDevMode = fs.existsSync(sdkPath);
 
 export default defineConfig({
   plugins: [react()],
@@ -42,7 +46,7 @@ export default defineConfig({
     fs: {
       allow: [
         '.',
-        path.resolve(__dirname, '../../hiyve-sdk'),
+        ...(isDevMode ? [sdkPath] : []),
       ],
     },
   },

@@ -76,7 +76,7 @@ function getHiyvePackages(pkg) {
 }
 
 function getLocalPath(pkg) {
-  return `file:${COMPONENTS_PATH}/${pkg}`;
+  return `link:${COMPONENTS_PATH}/${pkg}`;
 }
 
 function getProdPath(pkg) {
@@ -97,7 +97,7 @@ function writePackageJson(pkg) {
  * Check if a package version is in dev mode (local file path)
  */
 function isDevVersion(version) {
-  return version?.startsWith('file:');
+  return version?.startsWith('link:') || version?.startsWith('file:');
 }
 
 /**

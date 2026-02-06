@@ -43,10 +43,7 @@ export async function POST() {
       const errorText = await response.text();
       console.error('Room token generation failed:', response.status, errorText);
       return NextResponse.json(
-        {
-          error: 'Failed to generate room token',
-          details: errorText,
-        },
+        { message: 'Failed to generate room token' },
         { status: response.status }
       );
     }
@@ -56,10 +53,7 @@ export async function POST() {
   } catch (error) {
     console.error('Error generating room token:', error);
     return NextResponse.json(
-      {
-        error: 'Error generating room token',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

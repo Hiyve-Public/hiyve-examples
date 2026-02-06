@@ -82,15 +82,15 @@ toggle_example() {
     node scripts/toggle-packages.js "$mode"
 
     if [ "$mode" = "prod" ]; then
-        # Clean npm cache to ensure fresh packages
-        npm cache clean --force 2>/dev/null || true
+        # Clean pnpm store to ensure fresh packages
+        pnpm store prune 2>/dev/null || true
     fi
 
-    print_status "[$example_name] Cleaning node_modules and package-lock.json..."
-    rm -rf node_modules package-lock.json
+    print_status "[$example_name] Cleaning node_modules and pnpm-lock.yaml..."
+    rm -rf node_modules pnpm-lock.yaml
 
     print_status "[$example_name] Installing dependencies..."
-    npm install
+    pnpm install
 }
 
 do_dev() {
@@ -118,7 +118,7 @@ do_dev() {
     echo ""
     print_status "DEV mode ready!"
     echo ""
-    echo -e "  Run ${CYAN}npm run dev${NC} in any example to start the app"
+    echo -e "  Run ${CYAN}pnpm run dev${NC} in any example to start the app"
     echo -e "  Run ${CYAN}pnpm dev${NC} in hiyve-sdk for watch mode"
     echo ""
     print_warning "Remember to run './toggle-packages.sh prod' before committing!"
@@ -139,7 +139,7 @@ do_prod() {
     echo ""
     print_status "PROD mode ready!"
     echo ""
-    echo -e "  Run ${CYAN}npm run dev${NC} in any example to start the app"
+    echo -e "  Run ${CYAN}pnpm run dev${NC} in any example to start the app"
     echo ""
 }
 

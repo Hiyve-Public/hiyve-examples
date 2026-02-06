@@ -31,7 +31,7 @@ Enter your Hiyve API key when prompted. Get one at [console.hiyve.dev](https://c
 #### 2. Install Dependencies
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 #### 3. Configure Server Credentials
@@ -51,7 +51,7 @@ SERVER_REGION=us-west-2
 #### 4. Start the App
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open http://localhost:5173
@@ -173,13 +173,13 @@ const { isAudioMuted, isVideoMuted, toggleAudio, toggleVideo } = useLocalMedia()
 
 ```bash
 # Start both frontend and backend
-npm run dev
+pnpm run dev
 
 # Frontend only (port 5173)
-npm run dev:client
+pnpm run dev:client
 
 # Server only (port 3001)
-npm run dev:server
+pnpm run dev:server
 ```
 
 ### Toggle Between Local and Registry Packages
@@ -215,7 +215,7 @@ Grant camera and microphone permissions in your browser settings.
 Clear Vite cache and restart:
 ```bash
 rm -rf node_modules/.vite
-npm run dev
+pnpm run dev
 ```
 
 ## Next Steps

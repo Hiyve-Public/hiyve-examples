@@ -26,11 +26,11 @@ async function generateRoomToken(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   });
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const data = await response.json();
     throw new Error(data.message || 'Failed to generate room token');
   }
-  return (await response.json()).roomToken;
+  return data.roomToken;
 }
 
 /**
@@ -75,7 +75,7 @@ function Root() {
         onClose={() => setError(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setError(null)} severity="warning" sx={{ width: '100%' }}>
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
           {error && getErrorMessage(error)}
         </Alert>
       </Snackbar>

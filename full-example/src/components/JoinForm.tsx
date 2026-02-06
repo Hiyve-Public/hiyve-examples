@@ -47,6 +47,7 @@ export function JoinForm() {
 
   // Device preview state
   const [showDevicePreview, setShowDevicePreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedDevices, setSelectedDevices] = useState<SelectedDevices>({});
 
   // Get connection actions from ClientProvider
@@ -72,15 +73,29 @@ export function JoinForm() {
   // Handle room creation (owner flow)
   const handleCreateRoom = useCallback(async () => {
     if (!roomNameInput.trim() || !userName.trim()) return;
-    await createRoom(roomNameInput.trim(), userName.trim(), {
-      requireWaitingRoom: enableWaitingRoom,
-    });
+    setIsLoading(true);
+    try {
+      await createRoom(roomNameInput.trim(), userName.trim(), {
+        requireWaitingRoom: enableWaitingRoom,
+      });
+    } catch (err) {
+      console.error('Failed to create room:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [roomNameInput, userName, createRoom, enableWaitingRoom]);
 
   // Handle room join (guest flow)
   const handleJoinRoom = useCallback(async () => {
     if (!roomNameInput.trim() || !userName.trim()) return;
-    await joinRoom(roomNameInput.trim(), userName.trim());
+    setIsLoading(true);
+    try {
+      await joinRoom(roomNameInput.trim(), userName.trim());
+    } catch (err) {
+      console.error('Failed to join room:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [roomNameInput, userName, joinRoom]);
 
   const isFormValid = userName.trim().length >= 4 && roomNameInput.trim().length > 0;
@@ -144,9 +159,9 @@ export function JoinForm() {
             size="large"
             startIcon={<VideoCallIcon />}
             onClick={userRole === 'owner' ? handleCreateRoom : handleJoinRoom}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isLoading}
           >
-            {userRole === 'owner' ? 'Create Room' : 'Join Room'}
+            {isLoading ? (userRole === 'owner' ? 'Creating...' : 'Joining...') : (userRole === 'owner' ? 'Create Room' : 'Join Room')}
           </Button>
           <TooltipIconButton
             tooltip="Test camera & microphone"

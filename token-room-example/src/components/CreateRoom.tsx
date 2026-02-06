@@ -38,6 +38,8 @@ export function CreateRoom({ onUserNameChange }: CreateRoomProps) {
     () => localStorage.getItem(STORAGE_KEYS.userName) || ''
   );
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const { createRoom } = useConnection();
 
   // Persist form values
@@ -52,10 +54,13 @@ export function CreateRoom({ onUserNameChange }: CreateRoomProps) {
 
   const handleCreateRoom = useCallback(async () => {
     if (!roomName.trim() || !userName.trim()) return;
+    setIsLoading(true);
     try {
       await createRoom(roomName.trim(), userName.trim());
     } catch (err) {
       console.error('Create room failed', err);
+    } finally {
+      setIsLoading(false);
     }
   }, [roomName, userName, createRoom]);
 
@@ -96,10 +101,10 @@ export function CreateRoom({ onUserNameChange }: CreateRoomProps) {
           size="large"
           startIcon={<VideoCallIcon />}
           onClick={handleCreateRoom}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isLoading}
           sx={{ mt: 3 }}
         >
-          Create Room
+          {isLoading ? 'Creating...' : 'Create Room'}
         </Button>
       </Paper>
     </Container>

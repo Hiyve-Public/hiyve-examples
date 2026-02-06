@@ -38,8 +38,7 @@ import {
 } from '@hiyve/control-bar';
 import {
   VideoGrid,
-  type CustomLayoutHandler,
-  type TilePosition,
+  presentationLayoutHandler,
   type VideoTileOverlayElement,
   type LocalVideoTileOverlayElement,
 } from '@hiyve/video-grid';
@@ -49,22 +48,17 @@ import {
   type RecordingIndicatorColors,
   type RecordingIndicatorStyles,
 } from '@hiyve/recording';
-import { StreamingIndicator, StreamingUrlDisplay, type StreamingMode } from '@hiyve/streaming';
+import {
+  StreamingIndicator,
+  StreamingUrlDisplay,
+  defaultStreamingConfig,
+  type StreamingConfig,
+} from '@hiyve/streaming';
 import { Sidebar } from './Sidebar';
 import { STORAGE_KEYS } from '../constants';
 
-// Streaming configuration type
-export interface StreamingConfig {
-  mode: StreamingMode;
-  createMp4: boolean;
-  rtmpUrl: string;
-}
-
-const defaultStreamingConfig: StreamingConfig = {
-  mode: 'single',
-  createMp4: true,
-  rtmpUrl: '',
-};
+// Re-export for Sidebar import
+export type { StreamingConfig };
 
 // Static customization values (outside component - no useMemo needed)
 const RECORDING_COLORS: Partial<RecordingIndicatorColors> = {
@@ -114,6 +108,7 @@ export function VideoRoom({ userName }: VideoRoomProps) {
     return defaultStreamingConfig;
   });
 
+  const dominantSpeakerTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) {
@@ -142,8 +137,12 @@ export function VideoRoom({ userName }: VideoRoomProps) {
   // When the owner sets a dominant speaker, switch the streaming user to match
   useEffect(() => {
     if (isStreaming && isOwner && dominantSpeaker) {
-      switchStreamingUser(dominantSpeaker);
+      clearTimeout(dominantSpeakerTimerRef.current);
+      dominantSpeakerTimerRef.current = setTimeout(() => {
+        switchStreamingUser(dominantSpeaker);
+      }, 500);
     }
+    return () => clearTimeout(dominantSpeakerTimerRef.current);
   }, [dominantSpeaker, isStreaming, isOwner, switchStreamingUser]);
 
   // Responsive container breakpoint
@@ -162,78 +161,12 @@ export function VideoRoom({ userName }: VideoRoomProps) {
     []
   );
 
-  // Custom layout handler for the "presentation" layout
-  const presentationLayoutHandler = useMemo<CustomLayoutHandler>(
-    () =>
-      ({ availableWidth, availableHeight, participants, padding, gap, isLocalDominant, dominantSpeaker }) => {
-        const positions: Record<string, TilePosition> = {};
-
-        // Presentation layout: Large main area with small thumbnails at bottom
-        const thumbnailHeight = 100;
-        const thumbnailWidth = 150;
-        const mainHeight = availableHeight - thumbnailHeight - gap;
-
-        // Main presentation area (dominant speaker or local)
-        const mainPosition: TilePosition = {
-          left: padding,
-          top: padding,
-          width: availableWidth,
-          height: mainHeight,
-        };
-
-        if (isLocalDominant || !dominantSpeaker) {
-          // Local user is presenting
-          positions['local'] = mainPosition;
-
-          // Thumbnails for remote participants at bottom
-          participants.forEach((p, index) => {
-            positions[p.userId] = {
-              left: padding + index * (thumbnailWidth + gap),
-              top: padding + mainHeight + gap,
-              width: thumbnailWidth,
-              height: thumbnailHeight,
-            };
-          });
-        } else {
-          // Remote participant is presenting
-          const presenter = participants.find((p) => p.userId === dominantSpeaker);
-          if (presenter) {
-            positions[presenter.userId] = mainPosition;
-          }
-
-          // Local user in first thumbnail slot
-          positions['local'] = {
-            left: padding,
-            top: padding + mainHeight + gap,
-            width: thumbnailWidth,
-            height: thumbnailHeight,
-          };
-
-          // Other participants in remaining thumbnail slots
-          let thumbnailIndex = 1;
-          participants.forEach((p) => {
-            if (p.userId !== dominantSpeaker) {
-              positions[p.userId] = {
-                left: padding + thumbnailIndex * (thumbnailWidth + gap),
-                top: padding + mainHeight + gap,
-                width: thumbnailWidth,
-                height: thumbnailHeight,
-              };
-              thumbnailIndex++;
-            }
-          });
-        }
-
-        return positions;
-      },
-    []
-  );
-
   // Copy room name to clipboard
   const handleCopyRoomName = useCallback(() => {
     if (room?.name) {
-      navigator.clipboard.writeText(room.name);
-      setSnackbarOpen(true);
+      navigator.clipboard.writeText(room.name)
+        .then(() => setSnackbarOpen(true))
+        .catch(() => {});
     }
   }, [room]);
 

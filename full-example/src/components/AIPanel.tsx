@@ -1,450 +1,216 @@
 /**
  * AIPanel Component - AI-powered meeting intelligence using Hiyve Cloud.
+ *
+ * Provides an AI Assistant view and a Captions view with live transcription.
  */
 
 import { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
-  TextField,
-  Button,
-  Divider,
-  CircularProgress,
   Alert,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip,
-  Collapse,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   SmartToy as AIIcon,
-  Summarize as SummaryIcon,
-  ChecklistRtl as ActionItemsIcon,
-  Send as SendIcon,
-  Refresh as RefreshIcon,
-  PlayArrow as StartIcon,
-  Stop as StopIcon,
-  ExpandMore as ExpandIcon,
-  ExpandLess as CollapseIcon,
+  Chat as ChatIcon,
+  ClosedCaption as CaptionsIcon,
 } from '@mui/icons-material';
-import { useIntelligence, useLiveContext } from '@hiyve/cloud-provider';
-import { useTranscription } from '@hiyve/client-provider';
+import {
+  AIAssistant,
+  useIntelligenceReadiness,
+  IntelligenceReadinessStatus,
+} from '@hiyve/ai-assistant';
+import { useLiveContext, useMoodCloudSync } from '@hiyve/cloud-provider';
+import { useTranscription, useRecording } from '@hiyve/client-provider';
+import { useMoodAnalysisSafe } from '@hiyve/mood-analysis';
+import { TranscriptViewer } from '@hiyve/transcription';
 
 interface AIPanelProps {
   /** User ID (cleaned email) for API validation */
   userId: string;
   /** Room name for live context */
   roomName: string;
-  /** Whether the current user is the room owner */
-  isOwner: boolean;
+  /** Callback when the AI chat note is saved with the file ID */
+  onNoteSaved?: (fileId: string) => void;
 }
 
-export function AIPanel({ userId, roomName, isOwner }: AIPanelProps) {
-  // Query state
-  const [queryText, setQueryText] = useState('');
-  const [queryResult, setQueryResult] = useState<string | null>(null);
+type ViewMode = 'assistant' | 'captions';
 
-  // Summary state
-  const [summary, setSummary] = useState<string | null>(null);
+export function AIPanel({ userId, roomName, onNoteSaved }: AIPanelProps) {
+  // View mode toggle
+  const [viewMode, setViewMode] = useState<ViewMode>('assistant');
 
-  // Action items state
-  const [actionItems, setActionItems] = useState<string[] | null>(null);
+  // Track chat note file ID so we update the same file across saves
+  // Using state (not ref) so component re-renders and AIAssistant sees updated fileId
+  const [chatNoteFileId, setChatNoteFileId] = useState<string | undefined>(undefined);
+  const handleNoteSaved = useCallback((fileId: string) => {
+    setChatNoteFileId(fileId);
+    onNoteSaved?.(fileId);
+  }, [onNoteSaved]);
 
-  // Section expansion state
-  const [sectionsExpanded, setSectionsExpanded] = useState({
-    query: true,
-    summary: false,
-    actionItems: false,
-    liveContext: false,
+  // Get transcriptions from client provider for display
+  const { transcriptions, isTranscribing, enrichTranscription } = useTranscription();
+
+  // Get recording state for responseId (bot-created AI context)
+  const { responseId, isRecording, isRecordingStarting } = useRecording();
+
+  // Derive intelligence readiness state
+  const hasTranscripts = Array.isArray(transcriptions) && transcriptions.length > 0;
+  const readiness = useIntelligenceReadiness({
+    responseId,
+    isRecordingStarting,
+    isIntelligenceActive: isRecording || isTranscribing,
+    hasTranscriptions: hasTranscripts,
   });
 
-  // Get transcriptions from client provider for context
-  const { transcriptions } = useTranscription();
-
-  // Intelligence hook for one-off AI operations
+  // Live context hook - bot manages context, we just query against it
   const {
-    query,
-    getSummary,
-    getActionItems,
-    loading: intelligenceLoading,
-    error: intelligenceError,
-    clearError: clearIntelligenceError,
-  } = useIntelligence(userId);
-
-  // Live context hook for real-time AI
-  const {
-    session: liveSession,
-    loading: liveLoading,
     error: liveError,
-    isInitialized: isLiveContextActive,
-    initialize: initializeLiveContext,
-    ask: askLiveContext,
-    finalize: finalizeLiveContext,
+    askWithResponseId,
     clearError: clearLiveError,
   } = useLiveContext(roomName, userId);
 
-  // Build transcript text from transcriptions
-  const getTranscriptText = useCallback(() => {
-    if (!transcriptions || transcriptions.length === 0) {
-      return '';
+  // Mood analysis hook - client runs mood analysis on video streams
+  const moodAnalysis = useMoodAnalysisSafe();
+
+  // AI context is ready when we have a responseId from the bot
+  const isAIContextReady = !!responseId;
+
+  // Sync mood analysis data to cloud AI context
+  useMoodCloudSync({
+    roomName,
+    userId,
+    responseId,
+    moodStates: moodAnalysis?.moodStates ?? null,
+    moodEnabled: !!moodAnalysis?.enabled && !!moodAnalysis?.ready,
+    transcriptionCount: transcriptions?.length ?? 0,
+    enrichTranscription,
+  });
+
+  // Create onSend handler for AIAssistant
+  // Uses askWithResponseId to query against the bot's accumulated transcript context
+  const handleAIQuery = useCallback(async (message: string): Promise<string> => {
+    if (!responseId) {
+      throw new Error('No AI context available. Waiting for Intelligence Mode to initialize.');
     }
-    return transcriptions
-      .map((t) => `${t.userId || 'Unknown'}: ${t.text}`)
-      .join('\n');
-  }, [transcriptions]);
-
-  // Handle AI query
-  const handleQuery = useCallback(async () => {
-    if (!queryText.trim()) return;
-
-    const context = getTranscriptText();
-    const result = await query(queryText, {
-      context: context || undefined,
-      roomName: roomName || undefined,
-    });
-
-    if (result) {
-      setQueryResult(result.content);
+    const result = await askWithResponseId(responseId, message);
+    if (!result?.success) {
+      throw new Error(result?.content || 'Query failed');
     }
-  }, [queryText, query, getTranscriptText, roomName]);
-
-  // Handle summary generation
-  const handleGenerateSummary = useCallback(async () => {
-    const transcript = getTranscriptText();
-    if (!transcript) {
-      setSummary('No transcription available to summarize.');
-      return;
-    }
-
-    const result = await getSummary(transcript, {
-      roomName: roomName || undefined,
-      maxLength: 200,
-    });
-
-    if (result) {
-      setSummary(result);
-    }
-  }, [getSummary, getTranscriptText, roomName]);
-
-  // Handle action items extraction
-  const handleExtractActionItems = useCallback(async () => {
-    const transcript = getTranscriptText();
-    if (!transcript) {
-      setActionItems(['No transcription available to extract action items from.']);
-      return;
-    }
-
-    const result = await getActionItems(transcript, {
-      roomName: roomName || undefined,
-    });
-
-    if (result) {
-      // Handle both string and array formats
-      if (Array.isArray(result)) {
-        setActionItems(result.map((item) =>
-          typeof item === 'string' ? item : item.action || JSON.stringify(item)
-        ));
-      } else {
-        setActionItems([String(result)]);
-      }
-    }
-  }, [getActionItems, getTranscriptText, roomName]);
-
-  // Handle live context start/stop
-  const handleToggleLiveContext = useCallback(async () => {
-    if (isLiveContextActive) {
-      await finalizeLiveContext('user_stopped');
-    } else {
-      await initializeLiveContext();
-    }
-  }, [isLiveContextActive, initializeLiveContext, finalizeLiveContext]);
-
-  // Handle live context query
-  const [liveQueryText, setLiveQueryText] = useState('');
-  const [liveQueryResult, setLiveQueryResult] = useState<string | null>(null);
-
-  const handleLiveQuery = useCallback(async () => {
-    if (!liveQueryText.trim() || !isLiveContextActive) return;
-
-    const result = await askLiveContext(liveQueryText);
-    if (result) {
-      setLiveQueryResult(result.content);
-    }
-  }, [liveQueryText, isLiveContextActive, askLiveContext]);
-
-  // Toggle section expansion
-  const toggleSection = (section: keyof typeof sectionsExpanded) => {
-    setSectionsExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const loading = intelligenceLoading || liveLoading;
-  const error = intelligenceError || liveError;
+    return result.content;
+  }, [responseId, askWithResponseId]);
 
   return (
-    <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
-      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <AIIcon color="primary" />
-        AI Intelligence
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        AI-powered meeting intelligence using Hiyve Cloud
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
+      <Box sx={{ p: 2, pb: 1 }}>
+        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AIIcon color="primary" />
+          AI Intelligence
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          AI-powered meeting intelligence using Hiyve Cloud
+        </Typography>
 
-      {error && (
+        {/* View Mode Toggle */}
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(_, newMode) => newMode && setViewMode(newMode)}
+          size="small"
+          fullWidth
+        >
+          <ToggleButton value="assistant">
+            <ChatIcon sx={{ mr: 1 }} fontSize="small" />
+            Assistant
+          </ToggleButton>
+          <ToggleButton value="captions">
+            <CaptionsIcon sx={{ mr: 1 }} fontSize="small" />
+            Captions
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      {liveError && (
         <Alert
           severity="error"
-          onClose={() => {
-            clearIntelligenceError();
-            clearLiveError();
-          }}
-          sx={{ mb: 2 }}
+          onClose={clearLiveError}
+          sx={{ mx: 2, mb: 1 }}
         >
-          {error.message}
+          {liveError.message}
         </Alert>
       )}
 
-      {/* Ad-hoc Query Section */}
-      <Paper variant="outlined" sx={{ mb: 2 }}>
-        <Box
-          sx={{
-            p: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            cursor: 'pointer',
-          }}
-          onClick={() => toggleSection('query')}
-        >
-          <AIIcon sx={{ mr: 1 }} fontSize="small" />
-          <Typography variant="subtitle2" sx={{ flex: 1 }}>
-            Ask AI
-          </Typography>
-          <IconButton size="small">
-            {sectionsExpanded.query ? <CollapseIcon /> : <ExpandIcon />}
-          </IconButton>
-        </Box>
-        <Collapse in={sectionsExpanded.query}>
-          <Divider />
-          <Box sx={{ p: 2 }}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Ask a question about the meeting..."
-              value={queryText}
-              onChange={(e) => setQueryText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleQuery()}
-              disabled={loading}
-              sx={{ mb: 1 }}
-            />
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={loading ? <CircularProgress size={16} /> : <SendIcon />}
-              onClick={handleQuery}
-              disabled={loading || !queryText.trim()}
-            >
-              Ask
-            </Button>
-            {queryResult && (
-              <Paper
-                variant="outlined"
-                sx={{ mt: 2, p: 2, bgcolor: 'action.hover' }}
-              >
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {queryResult}
-                </Typography>
-              </Paper>
-            )}
-          </Box>
-        </Collapse>
-      </Paper>
-
-      {/* Summary Section - Owner only */}
-      {isOwner && (
-        <Paper variant="outlined" sx={{ mb: 2 }}>
-          <Box
-            sx={{
-              p: 1.5,
-              display: 'flex',
-              alignItems: 'center',
-              cursor: 'pointer',
+      {/* Assistant View - AIAssistant always mounted to preserve note file ID */}
+      {viewMode === 'assistant' && (
+        <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
+          <AIAssistant
+            roomId={roomName}
+            userId={userId}
+            liveContextActive={isAIContextReady}
+            hasTranscriptions={hasTranscripts}
+            onSend={handleAIQuery}
+            showHeader={false}
+            showQuickActions
+            quickActionsPosition="above-input"
+            quickActions={[
+              { id: 'summary', label: '📝 Summarize', query: 'Summarize what has been discussed so far', description: 'Get a summary of the meeting' },
+              { id: 'actions', label: '✅ Action Items', query: 'What action items have been mentioned?', description: 'Extract action items' },
+              { id: 'decisions', label: '🎯 Decisions', query: 'What decisions have been made?', description: 'List key decisions' },
+            ]}
+            suggestions={[
+              'What topics have been discussed?',
+              'Who has been most active?',
+              'Are there any follow-up items?',
+            ]}
+            systemPrompt="You are a helpful meeting assistant. Use the meeting context to provide accurate and relevant responses."
+            saveAsNote={{
+              fileId: chatNoteFileId,
+              onNoteSaved: handleNoteSaved,
             }}
-            onClick={() => toggleSection('summary')}
-          >
-            <SummaryIcon sx={{ mr: 1 }} fontSize="small" />
-            <Typography variant="subtitle2" sx={{ flex: 1 }}>
-              Meeting Summary
-            </Typography>
-            <IconButton size="small">
-              {sectionsExpanded.summary ? <CollapseIcon /> : <ExpandIcon />}
-            </IconButton>
-          </Box>
-          <Collapse in={sectionsExpanded.summary}>
-            <Divider />
-            <Box sx={{ p: 2 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                onClick={handleGenerateSummary}
-                disabled={loading}
-              >
-                Generate Summary
-              </Button>
-              {summary && (
-                <Paper
-                  variant="outlined"
-                  sx={{ mt: 2, p: 2, bgcolor: 'action.hover' }}
-                >
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                    {summary}
-                  </Typography>
-                </Paper>
-              )}
-            </Box>
-          </Collapse>
-        </Paper>
-      )}
-
-      {/* Action Items Section - Owner only */}
-      {isOwner && (
-        <Paper variant="outlined" sx={{ mb: 2 }}>
-          <Box
-            sx={{
-              p: 1.5,
-              display: 'flex',
-              alignItems: 'center',
-              cursor: 'pointer',
+            colors={{
+              background: 'transparent',
             }}
-            onClick={() => toggleSection('actionItems')}
-          >
-            <ActionItemsIcon sx={{ mr: 1 }} fontSize="small" />
-            <Typography variant="subtitle2" sx={{ flex: 1 }}>
-              Action Items
-            </Typography>
-            <IconButton size="small">
-              {sectionsExpanded.actionItems ? <CollapseIcon /> : <ExpandIcon />}
-            </IconButton>
-          </Box>
-          <Collapse in={sectionsExpanded.actionItems}>
-            <Divider />
-            <Box sx={{ p: 2 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                onClick={handleExtractActionItems}
-                disabled={loading}
-              >
-                Extract Action Items
-              </Button>
-              {actionItems && actionItems.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  {actionItems.map((item, index) => (
-                    <Chip
-                      key={index}
-                      label={item}
-                      size="small"
-                      sx={{ m: 0.5, maxWidth: '100%' }}
-                    />
-                  ))}
-                </Box>
-              )}
+            sx={{ height: '100%' }}
+          />
+          {/* Overlay readiness status when not ready */}
+          {!readiness.isReady && (
+            <Box sx={{
+              position: 'absolute',
+              inset: 0,
+              bgcolor: 'background.paper',
+              zIndex: 1,
+            }}>
+              <IntelligenceReadinessStatus
+                readiness={readiness}
+                icon={<AIIcon sx={{ fontSize: 48, color: 'text.disabled' }} />}
+              />
             </Box>
-          </Collapse>
-        </Paper>
-      )}
-
-      {/* Live Context Section */}
-      <Paper variant="outlined">
-        <Box
-          sx={{
-            p: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            cursor: 'pointer',
-          }}
-          onClick={() => toggleSection('liveContext')}
-        >
-          <AIIcon sx={{ mr: 1 }} fontSize="small" color={isLiveContextActive ? 'success' : 'inherit'} />
-          <Typography variant="subtitle2" sx={{ flex: 1 }}>
-            Live Context AI
-          </Typography>
-          {isLiveContextActive && (
-            <Chip label="Active" size="small" color="success" sx={{ mr: 1 }} />
           )}
-          <IconButton size="small">
-            {sectionsExpanded.liveContext ? <CollapseIcon /> : <ExpandIcon />}
-          </IconButton>
         </Box>
-        <Collapse in={sectionsExpanded.liveContext}>
-          <Divider />
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Live Context maintains real-time meeting context for more accurate AI responses.
-              {liveSession && (
-                <> Session: {liveSession.sessionKey}</>
-              )}
-            </Typography>
+      )}
 
-            <Tooltip title={isLiveContextActive ? 'Stop live context' : 'Start live context'}>
-              <Button
-                variant={isLiveContextActive ? 'outlined' : 'contained'}
-                size="small"
-                color={isLiveContextActive ? 'error' : 'primary'}
-                startIcon={
-                  liveLoading ? (
-                    <CircularProgress size={16} />
-                  ) : isLiveContextActive ? (
-                    <StopIcon />
-                  ) : (
-                    <StartIcon />
-                  )
-                }
-                onClick={handleToggleLiveContext}
-                disabled={liveLoading}
-                sx={{ mb: 2 }}
-              >
-                {isLiveContextActive ? 'Stop' : 'Start'} Live Context
-              </Button>
-            </Tooltip>
-
-            {isLiveContextActive && (
-              <>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Ask with live context..."
-                  value={liveQueryText}
-                  onChange={(e) => setLiveQueryText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleLiveQuery()}
-                  disabled={liveLoading}
-                  sx={{ mb: 1 }}
-                />
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={liveLoading ? <CircularProgress size={16} /> : <SendIcon />}
-                  onClick={handleLiveQuery}
-                  disabled={liveLoading || !liveQueryText.trim()}
-                >
-                  Ask
-                </Button>
-                {liveQueryResult && (
-                  <Paper
-                    variant="outlined"
-                    sx={{ mt: 2, p: 2, bgcolor: 'action.hover' }}
-                  >
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {liveQueryResult}
-                    </Typography>
-                  </Paper>
-                )}
-              </>
-            )}
-          </Box>
-        </Collapse>
-      </Paper>
+      {/* Captions View - Live transcription viewer */}
+      {viewMode === 'captions' && (
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          {hasTranscripts ? (
+            <TranscriptViewer
+              showTimestamps
+              showSentiment
+              autoScroll
+              groupingWindowMs={3000}
+              sx={{ height: '100%' }}
+            />
+          ) : (
+            <IntelligenceReadinessStatus
+              readiness={readiness}
+              icon={<CaptionsIcon sx={{ fontSize: 48, color: 'text.disabled' }} />}
+            />
+          )}
+        </Box>
+      )}
     </Box>
   );
 }

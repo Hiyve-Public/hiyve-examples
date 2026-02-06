@@ -38,7 +38,7 @@ export default defineConfig({
     alias: getDevAliases(),
     // Dedupe dependencies to ensure single instance resolution
     // This prevents "multiple instances" warnings for packages shared between
-    // hiyve-sdk and full-example
+    // hiyve-sdk and full-example, and ensures providers work correctly with symlinks
     dedupe: [
       'react',
       'react-dom',
@@ -48,6 +48,8 @@ export default defineConfig({
       '@mui/material',
       '@mui/system',
       '@mui/icons-material',
+      '@hiyve/client-provider',
+      '@hiyve/cloud-provider',
     ],
   },
   build: {

@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "setup": "npm install",
+    "setup": "pnpm install",
     "packages:dev": "node scripts/toggle-packages.js dev",
     "packages:prod": "node scripts/toggle-packages.js prod",
     "packages:status": "node scripts/toggle-packages.js status"
@@ -20,10 +20,10 @@
     "@mui/icons-material": "^5.15.0",
     "@mui/material": "^5.15.0",
     "@mui/material-nextjs": "^5.15.0",
-    "@hiyve/client-provider": "1.20.5",
-    "@hiyve/control-bar": "1.20.5",
-    "@hiyve/device-selector": "1.20.5",
-    "@hiyve/video-grid": "1.18.5",
+    "@hiyve/client-provider": "link:../../hiyve-sdk/packages/client-provider",
+    "@hiyve/control-bar": "link:../../hiyve-sdk/packages/control-bar",
+    "@hiyve/device-selector": "link:../../hiyve-sdk/packages/device-selector",
+    "@hiyve/video-grid": "link:../../hiyve-sdk/packages/video-grid",
     "next": "^14.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

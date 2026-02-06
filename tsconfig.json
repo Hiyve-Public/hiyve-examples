@@ -12,12 +12,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "full-example/src/**/*"
+    "basic-example/src/**/*",
+    "full-example/src/**/*",
+    "token-room-example/src/**/*"
   ],
   "exclude": [
     "node_modules",

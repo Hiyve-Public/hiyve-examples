@@ -14,63 +14,18 @@ importers:
       '@emotion/styled':
         specifier: ^11.11.0
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)
-      '@hiyve/ai-assistant':
-        specifier: link:../../hiyve-sdk/packages/ai-assistant
-        version: link:../../hiyve-sdk/packages/ai-assistant
-      '@hiyve/audio-monitor':
-        specifier: link:../../hiyve-sdk/packages/audio-monitor
-        version: link:../../hiyve-sdk/packages/audio-monitor
-      '@hiyve/chat':
-        specifier: link:../../hiyve-sdk/packages/chat
-        version: link:../../hiyve-sdk/packages/chat
       '@hiyve/client-provider':
         specifier: link:../../hiyve-sdk/packages/client-provider
         version: link:../../hiyve-sdk/packages/client-provider
-      '@hiyve/cloud-provider':
-        specifier: link:../../hiyve-sdk/packages/cloud-provider
-        version: link:../../hiyve-sdk/packages/cloud-provider
       '@hiyve/control-bar':
         specifier: link:../../hiyve-sdk/packages/control-bar
         version: link:../../hiyve-sdk/packages/control-bar
       '@hiyve/device-selector':
         specifier: link:../../hiyve-sdk/packages/device-selector
         version: link:../../hiyve-sdk/packages/device-selector
-      '@hiyve/file-manager':
-        specifier: link:../../hiyve-sdk/packages/file-manager
-        version: link:../../hiyve-sdk/packages/file-manager
-      '@hiyve/mood-analysis':
-        specifier: link:../../hiyve-sdk/packages/mood-analysis
-        version: link:../../hiyve-sdk/packages/mood-analysis
-      '@hiyve/notes':
-        specifier: link:../../hiyve-sdk/packages/notes
-        version: link:../../hiyve-sdk/packages/notes
-      '@hiyve/participant-list':
-        specifier: link:../../hiyve-sdk/packages/participant-list
-        version: link:../../hiyve-sdk/packages/participant-list
-      '@hiyve/polls':
-        specifier: link:../../hiyve-sdk/packages/polls
-        version: link:../../hiyve-sdk/packages/polls
-      '@hiyve/qa':
-        specifier: link:../../hiyve-sdk/packages/qa
-        version: link:../../hiyve-sdk/packages/qa
-      '@hiyve/recording':
-        specifier: link:../../hiyve-sdk/packages/recording
-        version: link:../../hiyve-sdk/packages/recording
       '@hiyve/rtc-client':
         specifier: link:../../hiyve-sdk/packages/rtc-client
         version: link:../../hiyve-sdk/packages/rtc-client
-      '@hiyve/session-common':
-        specifier: link:../../hiyve-sdk/packages/session-common
-        version: link:../../hiyve-sdk/packages/session-common
-      '@hiyve/sidebar':
-        specifier: link:../../hiyve-sdk/packages/sidebar
-        version: link:../../hiyve-sdk/packages/sidebar
-      '@hiyve/streaming':
-        specifier: link:../../hiyve-sdk/packages/streaming
-        version: link:../../hiyve-sdk/packages/streaming
-      '@hiyve/transcription':
-        specifier: link:../../hiyve-sdk/packages/transcription
-        version: link:../../hiyve-sdk/packages/transcription
       '@hiyve/utilities':
         specifier: link:../../hiyve-sdk/packages/utilities
         version: link:../../hiyve-sdk/packages/utilities
@@ -80,12 +35,6 @@ importers:
       '@hiyve/video-tile':
         specifier: link:../../hiyve-sdk/packages/video-tile
         version: link:../../hiyve-sdk/packages/video-tile
-      '@hiyve/waiting-room':
-        specifier: link:../../hiyve-sdk/packages/waiting-room
-        version: link:../../hiyve-sdk/packages/waiting-room
-      '@hiyve/whiteboard':
-        specifier: link:../../hiyve-sdk/packages/whiteboard
-        version: link:../../hiyve-sdk/packages/whiteboard
       '@mui/icons-material':
         specifier: ^5.15.0
         version: 5.18.0(@mui/material@5.18.0(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react@18.3.1))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.28)(react@18.3.1)

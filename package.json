@@ -4,6 +4,7 @@
   "private": true,
   "description": "Example applications demonstrating @hiyve/* components",
   "scripts": {
+    "prepare": "cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit",
     "docs": "./generate-docs.sh",
     "docs:serve": "./generate-docs.sh --serve",
     "docs:clean": "./generate-docs.sh --clean",

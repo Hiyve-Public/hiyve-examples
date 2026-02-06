@@ -94,7 +94,20 @@
       "Bash(pnpm pack:*)",
       "Bash(npm ls:*)",
       "Bash(pnpm help:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(for pkg in qa recording scheduling-ui sentiment-dashboard session-common sidebar streaming)",
+      "Bash(do echo \"=== $pkg ===\" ls -la /Users/karl/Development/muzieRTC/hiyve-sdk/packages/$pkg/src/)",
+      "Bash(for pkg in transcription utilities video-grid video-tile waiting-room whiteboard client-provider)",
+      "mcp__claude_ai_HiyveMCP__natural_query",
+      "Bash(pnpm turbo build:*)",
+      "Bash(pnpm vite build:*)",
+      "Bash(npm run packages:status:*)",
+      "Bash(test:*)",
+      "Bash(node:*)",
+      "Bash(node token-room-example/scripts/toggle-packages.js:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(cat:*)",
+      "Bash(python3:*)"
     ]
   }
 }

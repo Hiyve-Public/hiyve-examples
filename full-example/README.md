@@ -31,7 +31,7 @@ Enter your Hiyve API key when prompted. Get one at [console.hiyve.dev](https://c
 #### 2. Install Dependencies
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 This installs both frontend and server dependencies.
@@ -55,7 +55,7 @@ Get credentials at [console.hiyve.dev](https://console.hiyve.dev).
 #### 4. Start the App
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 This starts both the frontend (port 5173) and backend (port 3001).
@@ -88,10 +88,13 @@ Open http://localhost:5173
 - Live clock display in header
 - Responsive layout with container breakpoints
 - **AI Intelligence** (cloud-powered)
-  - Ad-hoc AI queries with meeting context
+  - Bot-managed transcript context via OpenAI Responses API
+  - Client-side mood analysis pushed to shared context
+  - Mood/sentiment indicators displayed alongside live captions
+  - Conversation history persists across sidebar tab switches (sessionStorage)
+  - Ad-hoc AI queries against accumulated meeting context
   - Meeting summary generation
   - Action items extraction
-  - Live context AI for real-time intelligence
 
 ## SDK Packages Used
 
@@ -140,7 +143,7 @@ This example uses **20 SDK packages** with **45+ components and hooks** to creat
 | Package | Component/Hook | Description |
 |---------|----------------|-------------|
 | `@hiyve/chat` | `ChatPanel` | Real-time text chat with message history |
-| `@hiyve/transcription` | `TranscriptViewer` | Live captions display with timestamps and auto-scroll |
+| `@hiyve/transcription` | `TranscriptViewer` | Live captions display with timestamps, sentiment indicators, and auto-scroll |
 
 ### Device & Audio Components (2 packages)
 
@@ -376,7 +379,8 @@ useQAListener({
 The ControlBar includes an "Intelligence Mode" that enables:
 - Recording with auto-compose
 - Live transcription
-- Mood/sentiment analysis
+- Mood/sentiment analysis with indicators in captions
+- AI assistant chat with session persistence
 - Post-meeting AI summary
 
 ```tsx
@@ -391,6 +395,22 @@ The ControlBar includes an "Intelligence Mode" that enables:
 />
 ```
 
+### AI Panel Behavior
+
+The AI panel shows contextual status messages as intelligence mode progresses:
+
+1. **Starting** — "Starting Intelligence Mode..."
+2. **Initializing** — "Initializing AI Context"
+3. **Waiting** — "Waiting for Transcriptions..."
+4. **Ready** — AI Assistant and Captions views become available
+5. **Stopped** — Returns to "Intelligence Mode Required"
+
+When intelligence mode is stopped, the panel resets to the inactive state regardless of any previously accumulated transcripts.
+
+### Mood in Captions
+
+When mood analysis is active, the captions view shows colored sentiment dots next to each speaker group, indicating positive, negative, or neutral mood.
+
 ## Server API
 
 The backend server provides:
@@ -398,6 +418,7 @@ The backend server provides:
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/generate-room-token` | POST | Generate Hiyve room token |
+| `/api/generate-cloud-token` | POST | Generate Hiyve cloud token for AI features |
 | `/api/health` | GET | Health check |
 
 ## Development
@@ -406,16 +427,16 @@ The backend server provides:
 
 ```bash
 # Start both frontend and backend
-npm run dev
+pnpm run dev
 
 # Frontend only (port 5173)
-npm run dev:client
+pnpm run dev:client
 
 # Server only (port 3001)
-npm run dev:server
+pnpm run dev:server
 
 # Build for production
-npm run build
+pnpm run build
 ```
 
 ### Toggle Between Local and Registry Packages
@@ -435,17 +456,17 @@ For development with local `hiyve-sdk`:
 ./toggle-packages.sh status
 ```
 
-Or use npm scripts within full-example:
+Or use pnpm scripts within full-example:
 
 ```bash
 # Check current mode
-npm run packages:status
+pnpm run packages:status
 
 # Switch to dev mode (local packages)
-npm run packages:dev
+pnpm run packages:dev
 
 # Switch to prod mode (S3 packages)
-npm run packages:prod
+pnpm run packages:prod
 ```
 
 **Important:** Always run `./toggle-packages.sh prod` before committing to the examples repo.
@@ -456,7 +477,7 @@ npm run packages:prod
 Create `server/.env` with valid Hiyve API credentials.
 
 ### "Cannot connect to server" error
-Ensure the server is running on port 3001. Run `npm run dev` to start both frontend and backend.
+Ensure the server is running on port 3001. Run `pnpm run dev` to start both frontend and backend.
 
 ### Camera/microphone not working
 Grant camera and microphone permissions in your browser settings.
@@ -468,15 +489,15 @@ Transcriptions are only sent to the room owner. Make sure you created the room (
 Clear Vite cache and restart:
 ```bash
 rm -rf node_modules/.vite
-npm run dev
+pnpm run dev
 ```
 
-### Integrity checksum errors during npm install
-Clear npm cache and package-lock.json:
+### Integrity checksum errors during pnpm install
+Clear pnpm store and lockfile:
 ```bash
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
+rm -rf node_modules pnpm-lock.yaml
+pnpm store prune
+pnpm install
 ```
 
 ## Learn More

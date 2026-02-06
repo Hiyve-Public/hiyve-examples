@@ -6,7 +6,7 @@ Example applications demonstrating how to build video conferencing apps with `@h
 
 ```bash
 # 1. Clone or download this repository
-git clone https://github.com/your-org/hiyve-examples.git
+git clone https://github.com/AcmeRTC/hiyve-examples.git
 cd hiyve-examples
 
 # 2. Authenticate with Hiyve (required for @hiyve/* packages)
@@ -17,7 +17,7 @@ npx hiyve-cli login
 
 # 4. Start the app
 cd full-example
-npm run dev
+pnpm run dev
 ```
 
 Open http://localhost:5173
@@ -36,7 +36,7 @@ The `@hiyve/*` packages provide React components for building video conferencing
 ## Prerequisites
 
 - Node.js 18+
-- npm
+- pnpm
 - **Hiyve API Key** - Get one at [console.hiyve.dev](https://console.hiyve.dev)
 
 ## Authentication
@@ -59,7 +59,7 @@ All `@hiyve/*` packages are hosted on S3 and referenced directly via URL in pack
 
 | Package | Description |
 |---------|-------------|
-| `hiyve-client-provider` | Core state management, hooks, and WebRTC client wrapper |
+| `@hiyve/client-provider` | Core state management, hooks, and WebRTC client wrapper |
 | `@hiyve/video-grid` | Auto-layout video grid with multiple layout modes |
 | `@hiyve/video-tile` | Individual video tile components with mood indicators |
 | `@hiyve/control-bar` | Media controls, recording, screen share, intelligence mode |
@@ -84,7 +84,7 @@ Packages are installed from the private Hiyve registry. After authenticating wit
 ```json
 {
   "dependencies": {
-    "hiyve-client-provider": "^1.0.0",
+    "@hiyve/client-provider": "^1.0.0",
     "@hiyve/video-grid": "^1.0.0",
     "@hiyve/qa": "^1.0.0"
   }
@@ -115,8 +115,8 @@ See [basic-example/README.md](basic-example/README.md) for details.
 
 ```bash
 cd basic-example
-npm run setup
-npm run dev
+pnpm run setup
+pnpm run dev
 ```
 
 ### Full Example
@@ -157,8 +157,8 @@ See [token-room-example/README.md](token-room-example/README.md) for details.
 
 ```bash
 cd token-room-example
-npm run setup
-npm run dev
+pnpm run setup
+pnpm run dev
 ```
 
 ### Next.js Example
@@ -177,8 +177,8 @@ See [nextjs-example/README.md](nextjs-example/README.md) for details.
 
 ```bash
 cd nextjs-example
-npm run setup
-npm run dev
+pnpm run setup
+pnpm run dev
 # Open http://localhost:3000
 ```
 
@@ -189,7 +189,7 @@ npm run dev
 All `@hiyve/*` components work inside a `ClientProvider`:
 
 ```tsx
-import { ClientProvider } from 'hiyve-client-provider';
+import { ClientProvider } from '@hiyve/client-provider';
 import { FileCacheProvider } from '@hiyve/file-manager';
 import { MoodAnalysisProvider } from '@hiyve/mood-analysis';
 import { VideoGrid } from '@hiyve/video-grid';
@@ -358,12 +358,10 @@ For developers working on `hiyve-sdk` alongside examples:
 ### Package Scripts
 
 ```bash
-# Check which packages are local vs S3
-npm run packages:status
-
-# Switch modes (without rebuild)
-npm run packages:dev
-npm run packages:prod
+# Per-example toggle (from inside an example directory):
+pnpm run packages:status
+pnpm run packages:dev
+pnpm run packages:prod
 ```
 
 ## Documentation

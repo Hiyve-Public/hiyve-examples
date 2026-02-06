@@ -30,7 +30,7 @@ Then start the app:
 
 ```bash
 cd token-room-example
-npm run dev
+pnpm run dev
 ```
 
 ### Option B: Manual Setup
@@ -48,7 +48,7 @@ npm run dev
 2. **Install dependencies**
 
    ```bash
-   npm run setup
+   pnpm run setup
    ```
 
 3. **Configure API credentials**
@@ -69,7 +69,7 @@ npm run dev
 4. **Start the application**
 
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
    This starts both the frontend (port 5173) and backend (port 3001).
@@ -186,7 +186,7 @@ const { isBelowBreakpoint: isCompact, containerRef } = useContainerBreakpoint(60
 ## Dependencies
 
 ### Frontend
-- `hiyve-client-provider` - State management and hooks
+- `@hiyve/client-provider` - State management and hooks
 - `@hiyve/join-token` - Invite link components
 - `@hiyve/video-grid` - Video layout
 - `@hiyve/control-bar` - Media controls

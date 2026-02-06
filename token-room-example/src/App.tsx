@@ -21,7 +21,6 @@ function App() {
   const { isInRoom } = useRoom();
 
   // Check if this is a join link
-  const [isJoinLink, setIsJoinLink] = useState(false);
   const [joinParams, setJoinParams] = useState<{
     joinToken: string;
     region: string;
@@ -39,10 +38,11 @@ function App() {
     const region = params.get('region');
 
     if (joinToken && region) {
-      setIsJoinLink(true);
       setJoinParams({ joinToken, region });
     }
   }, []);
+
+  const isJoinLink = joinParams !== null;
 
   // Sync userName from localStorage (cross-tab only - same-tab uses onUserNameChange callback)
   useEffect(() => {

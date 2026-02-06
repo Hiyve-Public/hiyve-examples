@@ -57,6 +57,7 @@ export default function JoinForm({ onUserNameChange }: JoinFormProps) {
   const [roomName, setRoomName] = useState('');
   const [userName, setUserName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { createRoom, joinRoom } = useConnection();
 
@@ -66,11 +67,14 @@ export default function JoinForm({ onUserNameChange }: JoinFormProps) {
       return;
     }
     setError(null);
-    onUserNameChange(userName);
+    setIsLoading(true);
     try {
       await createRoom(roomName.trim(), userName.trim());
+      onUserNameChange(userName.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create room');
+    } finally {
+      setIsLoading(false);
     }
   }, [roomName, userName, createRoom, onUserNameChange]);
 
@@ -80,11 +84,14 @@ export default function JoinForm({ onUserNameChange }: JoinFormProps) {
       return;
     }
     setError(null);
-    onUserNameChange(userName);
+    setIsLoading(true);
     try {
       await joinRoom(roomName.trim(), userName.trim());
+      onUserNameChange(userName.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to join room');
+    } finally {
+      setIsLoading(false);
     }
   }, [roomName, userName, joinRoom, onUserNameChange]);
 
@@ -154,18 +161,20 @@ export default function JoinForm({ onUserNameChange }: JoinFormProps) {
             <Button
               variant="contained"
               onClick={handleCreate}
+              disabled={isLoading}
               fullWidth
               size="large"
             >
-              Create Room
+              {isLoading ? 'Creating...' : 'Create Room'}
             </Button>
             <Button
               variant="outlined"
               onClick={handleJoin}
+              disabled={isLoading}
               fullWidth
               size="large"
             >
-              Join Room
+              {isLoading ? 'Joining...' : 'Join Room'}
             </Button>
           </Stack>
         </Stack>

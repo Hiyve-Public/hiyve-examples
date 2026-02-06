@@ -12,6 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+// TODO: Production - restrict CORS origins and add rate limiting:
+// app.use(cors({ origin: 'https://your-domain.com' }));
+// app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(cors());
 app.use(express.json());
 
@@ -58,20 +61,14 @@ app.post('/api/generate-room-token', async (req, res) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Room token generation failed:', response.status, errorText);
-      return res.status(response.status).json({
-        error: 'Failed to generate room token',
-        details: errorText
-      });
+      return res.status(response.status).json({ message: 'Failed to generate room token' });
     }
 
     const data = await response.json();
     res.json(data);
   } catch (error) {
     console.error('Error generating room token:', error);
-    res.status(500).json({
-      error: 'Error generating room token',
-      message: error.message
-    });
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
